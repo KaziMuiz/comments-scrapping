@@ -1,1 +1,2 @@
-# Youtube-comments-scrapping
+comments-scrapping
+“This dataset contains 2000 English-language reviews of Counter-Strike 2 from 11 Sept to 11 Oct 2026, collected through Steam’s public review endpoint. It is a recent sample, not a random sample of all reviews.”
