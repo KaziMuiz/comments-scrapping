@@ -1,0 +1,102 @@
+{
+  "game": "Counter-Strike 2 (Steam app 730)",
+  "total_reviews": 2000,
+  "positive": 1033,
+  "negative": 967,
+  "date_from": "2026-09-11",
+  "date_to": "2026-10-11",
+  "median_length": {
+    "positive": 127.0,
+    "negative": 168.0
+  },
+  "cheat_mention_percent": {
+    "positive": 35.5,
+    "negative": 69.5
+  },
+  "top_words": {
+    "positive": [
+      [
+        "good",
+        342
+      ],
+      [
+        "cheaters",
+        259
+      ],
+      [
+        "play",
+        246
+      ],
+      [
+        "fun",
+        191
+      ],
+      [
+        "playing",
+        161
+      ],
+      [
+        "time",
+        160
+      ],
+      [
+        "every",
+        139
+      ],
+      [
+        "still",
+        138
+      ],
+      [
+        "counter",
+        134
+      ],
+      [
+        "better",
+        132
+      ]
+    ],
+    "negative": [
+      [
+        "cheaters",
+        557
+      ],
+      [
+        "play",
+        333
+      ],
+      [
+        "valve",
+        313
+      ],
+      [
+        "cheat",
+        239
+      ],
+      [
+        "even",
+        237
+      ],
+      [
+        "every",
+        235
+      ],
+      [
+        "anti",
+        199
+      ],
+      [
+        "players",
+        197
+      ],
+      [
+        "playing",
+        184
+      ],
+      [
+        "cheater",
+        164
+      ]
+    ]
+  }
+}
