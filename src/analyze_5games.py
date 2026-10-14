@@ -38,11 +38,20 @@ by_mode = (neg.groupby("mode")[list(THEMES)].mean() * 100).round(1)
 print("Percent of NEGATIVE reviews mentioning each theme:")
 print(by_mode)
 
+neg_counts = {k: int(v) for k, v in neg.groupby("mode").size().items()}
+theme_counts = neg.groupby("mode")[list(THEMES)].sum().astype(int)
+print()
+print("Number of NEGATIVE reviews per mode:", neg_counts)
+print("Number of NEGATIVE reviews mentioning each theme:")
+print(theme_counts)
+
 summary = {
     "total_reviews": int(len(df)),
     "per_game": per_game.reset_index().to_dict(orient="records"),
     "median_length_by_sentiment": {"positive": med_pos, "negative": med_neg},
     "negative_theme_percent_by_mode": by_mode.to_dict(orient="index"),
+    "negative_reviews_by_mode": neg_counts,
+    "negative_theme_counts_by_mode": theme_counts.to_dict(orient="index"),
 }
 with open("data/summary_5games.json", "w", encoding="utf-8") as f:
     json.dump(summary, f, indent=2, default=float)

@@ -47,5 +47,21 @@
       "servers_lag": 1.4,
       "bugs_performance": 8.6
     }
+  },
+  "negative_reviews_by_mode": {
+    "multiplayer": 242,
+    "single-player": 70
+  },
+  "negative_theme_counts_by_mode": {
+    "multiplayer": {
+      "cheating": 56,
+      "servers_lag": 24,
+      "bugs_performance": 11
+    },
+    "single-player": {
+      "cheating": 1,
+      "servers_lag": 1,
+      "bugs_performance": 6
+    }
   }
 }
