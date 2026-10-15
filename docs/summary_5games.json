@@ -1,0 +1,67 @@
+{
+  "total_reviews": 2000,
+  "per_game": [
+    {
+      "game": "Apex Legends",
+      "reviews": 400,
+      "percent_positive": 65.0,
+      "median_length": 34.0
+    },
+    {
+      "game": "Counter-Strike 2",
+      "reviews": 400,
+      "percent_positive": 74.5,
+      "median_length": 17.0
+    },
+    {
+      "game": "Cyberpunk 2077",
+      "reviews": 400,
+      "percent_positive": 93.2,
+      "median_length": 38.5
+    },
+    {
+      "game": "Elden Ring",
+      "reviews": 400,
+      "percent_positive": 90.5,
+      "median_length": 36.0
+    },
+    {
+      "game": "Stardew Valley",
+      "reviews": 400,
+      "percent_positive": 98.8,
+      "median_length": 34.5
+    }
+  ],
+  "median_length_by_sentiment": {
+    "positive": 27.0,
+    "negative": 69.5
+  },
+  "negative_theme_percent_by_mode": {
+    "multiplayer": {
+      "cheating": 23.1,
+      "servers_lag": 9.9,
+      "bugs_performance": 4.5
+    },
+    "single-player": {
+      "cheating": 1.4,
+      "servers_lag": 1.4,
+      "bugs_performance": 8.6
+    }
+  },
+  "negative_reviews_by_mode": {
+    "multiplayer": 242,
+    "single-player": 70
+  },
+  "negative_theme_counts_by_mode": {
+    "multiplayer": {
+      "cheating": 56,
+      "servers_lag": 24,
+      "bugs_performance": 11
+    },
+    "single-player": {
+      "cheating": 1,
+      "servers_lag": 1,
+      "bugs_performance": 6
+    }
+  }
+}
