@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Steam Review Analysis</title>
+  <meta name="description" content="An analysis of 2000 recent Steam reviews from five games.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <style>
+    :root {
+      --bg: #050403;
+      --surface: rgba(22, 15, 11, 0.74);
+      --surface-2: rgba(92, 62, 40, 0.55);
+      --ink: #f5eee6;
+      --muted: #c9baa8;
+      --up: #3ddc97;
+      --down: #ff6b6b;
+      --multi: #6ea8ff;
+      --single: #ffb454;
+      --display: "Unbounded", "Trebuchet MS", system-ui, sans-serif;
+      --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--body);
+      font-size: 1.0625rem;
+      line-height: 1.6;
+    }
+    body.locked { overflow: hidden; }
+    body.locked #app { visibility: hidden; }
+    a { color: #e8cfae; }
+    :focus-visible { outline: 3px solid #f1e3d0; outline-offset: 3px; }
+
+    /* ---------- Splash ---------- */
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 24px;
+      overflow: hidden;
+      background: transparent;
+      transition: transform 0.9s cubic-bezier(0.77, 0, 0.18, 1);
+    }
+    #splash[hidden] { display: none; }
+    #splash.leaving { transform: translateY(-100%); }
+    #galaxy { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .galaxy-labels { position: absolute; inset: 0; pointer-events: none; }
+    .galaxy-label {
+      position: absolute;
+      transform: translateX(-50%);
+      font-size: 0.85rem;
+      color: var(--muted);
+      opacity: 0;
+      transition: opacity 1s ease;
+      white-space: nowrap;
+      text-shadow: 0 0 12px #050403;
+    }
+    .galaxy-label.show { opacity: 0.85; }
+    .splash-inner { position: relative; z-index: 2; max-width: 760px; }
+    .splash-inner::before {
+      content: "";
+      position: absolute;
+      inset: -70px -90px;
+      z-index: -1;
+      background: radial-gradient(closest-side, rgba(5, 4, 3, 0.7), rgba(5, 4, 3, 0));
+    }
+    .star-legend { color: var(--muted); font-size: 0.9rem; margin: 18px 0 0; animation: settle 0.9s 1.1s both; }
+    .star-legend .dot { margin: 0 6px 0 12px; }
+    .dot.pos { background: var(--up); }
+    .dot.neg { background: var(--down); }
+    .splash-title {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: clamp(2.3rem, 7.4vw, 5rem);
+      line-height: 1.04;
+      letter-spacing: -0.025em;
+      margin: 0 0 18px;
+      animation: settle 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+    .splash-sub {
+      font-size: clamp(1.05rem, 2.4vw, 1.3rem);
+      color: var(--muted);
+      max-width: 34em;
+      margin: 0 auto 30px;
+      animation: settle 0.9s 0.25s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+    .splash-count {
+      font-family: var(--display);
+      font-weight: 500;
+      font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+      margin: 0 0 28px;
+      animation: settle 0.9s 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+    .splash-count span { color: #e8cfae; font-variant-numeric: tabular-nums; }
+    .start {
+      font-family: var(--display);
+      font-weight: 500;
+      font-size: 1.05rem;
+      color: #1a110a;
+      background: #f1e3d0;
+      border: 0;
+      border-radius: 999px;
+      padding: 16px 38px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 0 0 0 rgba(241, 227, 208, 0.5);
+      animation: settle 0.9s 0.75s cubic-bezier(0.2, 0.7, 0.2, 1) both, pulse 2.4s 1.8s ease-out infinite;
+    }
+    .start:hover { transform: translateY(-2px); }
+    .hint { color: var(--muted); font-size: 0.95rem; margin: 14px 0 0; animation: settle 0.9s 0.95s both; }
+    .load-error { color: var(--down); margin-top: 12px; font-size: 0.95rem; }
+    @keyframes settle {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(241, 227, 208, 0.5); }
+      70% { box-shadow: 0 0 0 18px rgba(241, 227, 208, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(241, 227, 208, 0); }
+    }
+
+    /* ---------- Navigation and progress ---------- */
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      width: 0;
+      background: linear-gradient(90deg, #e8cfae, #c98b52);
+      z-index: 40;
+      transition: width 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    .topnav {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px clamp(16px, 4vw, 40px);
+      background: rgba(5, 4, 3, 0.62);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 235, 215, 0.1);
+    }
+    .brand {
+      font-family: var(--display);
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: var(--ink);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .links { display: flex; gap: 20px; overflow-x: auto; }
+    .links a { color: var(--muted); text-decoration: none; font-weight: 500; white-space: nowrap; }
+    .links a { padding: 4px 0; border-bottom: 2px solid transparent; transition: color 0.2s ease, border-color 0.2s ease; }
+    .links a:hover { color: var(--ink); }
+    .links a[aria-current="page"] { color: var(--ink); border-bottom-color: #e8cfae; }
+
+    /* ---------- Layout ---------- */
+    .wrap { max-width: 980px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 32px); }
+    h2 {
+      font-family: var(--display);
+      font-weight: 500;
+      font-size: clamp(1.4rem, 3.2vw, 2.1rem);
+      line-height: 1.2;
+      letter-spacing: -0.01em;
+      margin: 0 0 20px;
+    }
+    h2.question {
+      font-weight: 700;
+      font-size: clamp(1.8rem, 4.8vw, 3.3rem);
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      max-width: 17em;
+    }
+    h3 {
+      font-family: var(--display);
+      font-weight: 500;
+      font-size: 1.15rem;
+      margin: 0 0 8px;
+    }
+    p { margin: 0 0 16px; }
+    .lead { font-size: 1.2rem; max-width: 40em; }
+    .muted { color: var(--muted); }
+    .prose { max-width: 40em; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 14px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: var(--surface); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      font-weight: 500;
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .dot.multi { background: var(--multi); }
+    .dot.single { background: var(--single); }
+    .legend { color: var(--muted); font-size: 0.95rem; }
+    .legend .dot { margin: 0 4px 0 10px; }
+
+    /* ---------- Pipeline ---------- */
+    .pipeline { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 0; }
+    .pipeline li {
+      position: relative;
+      padding: 0 0 30px 64px;
+    }
+    .pipeline li::before {
+      content: "";
+      position: absolute;
+      left: 21px; top: 44px; bottom: 0;
+      width: 2px;
+      background: var(--surface-2);
+    }
+    .pipeline li:last-child::before { display: none; }
+    .step-n {
+      position: absolute;
+      left: 0; top: 0;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      display: grid;
+      place-items: center;
+      font-family: var(--display);
+      font-weight: 500;
+    }
+    .pipeline p { color: var(--muted); max-width: 38em; margin-bottom: 0; }
+
+    /* ---------- Findings ---------- */
+    .block { margin-top: 56px; }
+    .block:first-of-type { margin-top: 28px; }
+    .panel {
+      background: var(--surface); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border-radius: 22px;
+      padding: clamp(16px, 3vw, 28px);
+      margin: 18px 0 14px;
+    }
+    .chartbox { position: relative; height: 300px; }
+    .chartbox.tall { height: 340px; }
+    .lenrow {
+      display: grid;
+      grid-template-columns: minmax(120px, 190px) 1fr max-content;
+      align-items: center;
+      gap: 14px;
+      margin: 14px 0;
+    }
+    .track { height: 26px; background: var(--surface-2); border-radius: 13px; overflow: hidden; }
+    .fill {
+      height: 100%;
+      width: 0;
+      border-radius: 13px;
+      transition: width 1.3s cubic-bezier(0.2, 0.7, 0.2, 1);
+    }
+    .fill.up { background: var(--up); }
+    .fill.down { background: var(--down); }
+    .lenrow b { font-family: var(--display); font-weight: 500; font-size: 0.95rem; text-align: right; white-space: nowrap; }
+    .takeaway { max-width: 40em; }
+
+    .verdicts { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 14px; }
+    .verdicts li { background: var(--surface); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 16px; padding: 18px 20px; }
+    .verdicts .claim { font-weight: 700; margin-bottom: 8px; }
+    .badge {
+      display: inline-block;
+      font-weight: 700;
+      font-size: 0.9rem;
+      padding: 3px 12px;
+      border-radius: 999px;
+      margin-right: 8px;
+      color: #10101f;
+    }
+    .badge.supported { background: var(--up); }
+    .badge.inconclusive { background: var(--single); }
+    .badge.not-supported { background: var(--down); }
+    .evidence { color: var(--muted); margin: 8px 0 0; }
+
+    ul.cautions { padding-left: 1.2em; max-width: 40em; }
+    ul.cautions li { margin-bottom: 12px; }
+
+    footer { padding: 56px 0 64px; color: var(--muted); font-size: 0.95rem; }
+    footer p { max-width: 40em; }
+
+    /* ---------- Smoke background ---------- */
+    #smoke, #smokeFallback {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      display: block;
+      background: #050403;
+    }
+    #smoke[hidden], #smokeFallback[hidden] { display: none; }
+    #smokeFallback { overflow: hidden; }
+    #smokeFallback::before, #smokeFallback::after {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      filter: blur(60px);
+    }
+    #smokeFallback::before {
+      background:
+        radial-gradient(35% 30% at 25% 70%, rgba(120, 70, 35, 0.55), transparent 70%),
+        radial-gradient(30% 28% at 75% 30%, rgba(90, 52, 26, 0.5), transparent 70%);
+      animation: smokeA 26s ease-in-out infinite alternate;
+    }
+    #smokeFallback::after {
+      background:
+        radial-gradient(32% 30% at 60% 80%, rgba(150, 90, 45, 0.35), transparent 70%),
+        radial-gradient(28% 26% at 20% 25%, rgba(70, 42, 22, 0.55), transparent 70%);
+      animation: smokeB 34s ease-in-out infinite alternate;
+    }
+    @keyframes smokeA { from { transform: translate(-6%, 4%) scale(1); } to { transform: translate(6%, -5%) scale(1.15); } }
+    @keyframes smokeB { from { transform: translate(5%, -4%) scale(1.1); } to { transform: translate(-6%, 6%) scale(1); } }
+    #app { position: relative; z-index: 1; }
+
+    /* ---------- Pages ---------- */
+    .page {
+      padding: clamp(28px, 5vw, 56px) 0 48px;
+      transition: opacity 0.26s ease, transform 0.26s ease, filter 0.26s ease;
+    }
+    .page .wrap { width: 100%; }
+    .page[hidden] { display: none !important; }
+    .page.leaving { opacity: 0; transform: translateX(calc(var(--dx, 36px) * -0.6)); filter: blur(6px); }
+    .page.entering { opacity: 0; transform: translateX(var(--dx, 36px)); filter: blur(6px); }
+    .page h2, .page h3, .page .lead, .page .prose, .page .legend, .page .pipeline p, .page .takeaway, .page ul.cautions { text-shadow: 0 1px 14px rgba(5, 4, 3, 0.85); }
+    #page-question:not([hidden]) { display: flex; align-items: center; min-height: calc(100vh - 64px); }
+    .pager { margin: 44px 0 0; }
+    .next {
+      font-family: var(--display);
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: #1a110a;
+      background: #f1e3d0;
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 28px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+    .next:hover { transform: translateY(-2px); background: #fff4e3; }
+
+    /* ---------- Explore and Q&A ---------- */
+    .picker { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 20px; }
+    .pick {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font: inherit;
+      font-weight: 500;
+      color: var(--ink);
+      background: var(--surface);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 235, 215, 0.14);
+      border-radius: 999px;
+      padding: 10px 18px;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+    .pick:hover { transform: translateY(-2px); }
+    .pick[aria-pressed="true"] { background: #f1e3d0; color: #1a110a; border-color: #f1e3d0; }
+    .detail { margin-top: 0; }
+    .detail-head { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-bottom: 14px; }
+    .detail-head h3 { font-size: clamp(1.3rem, 3vw, 1.7rem); margin: 0; }
+    .tag { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+    .facts { display: flex; flex-wrap: wrap; gap: 14px 36px; margin: 6px 0 12px; }
+    .fact { margin: 0; display: grid; }
+    .fact b { font-family: var(--display); font-weight: 500; font-size: 1.4rem; }
+    .fact span { color: var(--muted); font-size: 0.95rem; }
+    .detail h4 { font-family: var(--display); font-weight: 500; font-size: 1rem; margin: 26px 0 4px; }
+    .detail-warn { color: var(--single); margin: 8px 0 0; }
+    .detail-note { color: var(--muted); margin: 22px 0 0; }
+    .fill.sand { background: #e8cfae; }
+    .words { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .words span { background: var(--surface-2); border-radius: 999px; padding: 4px 14px; }
+    .words em { color: var(--muted); font-style: normal; margin-left: 6px; }
+    .qa-list { display: grid; gap: 12px; max-width: 44em; margin-top: 20px; }
+    details.qa {
+      background: var(--surface);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 16px;
+      padding: 4px 20px;
+    }
+    details.qa summary { cursor: pointer; font-weight: 700; padding: 14px 28px 14px 0; list-style: none; position: relative; }
+    details.qa summary::-webkit-details-marker { display: none; }
+    details.qa summary::after { content: "+"; position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 1.4rem; color: #e8cfae; }
+    details.qa[open] summary::after { content: "\2212"; }
+    details.qa p { margin: 0 0 16px; color: var(--muted); }
+
+    /* ---------- Action plan ---------- */
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 8px; }
+    .col h4 { margin-top: 8px; }
+    .plan-item { margin: 16px 0 20px; }
+    .plan-title { font-weight: 700; margin: 0 0 6px; }
+    .plan-focus { color: var(--muted); margin: 6px 0 0; font-size: 0.95rem; }
+    .plan-head { font-weight: 700; }
+    .thin { display: grid; grid-template-columns: 1fr max-content; gap: 12px; align-items: center; }
+    .thin b { font-family: var(--display); font-weight: 500; font-size: 0.85rem; white-space: nowrap; }
+    .scroll-x { overflow-x: auto; }
+    table.heat { border-collapse: separate; border-spacing: 4px; width: 100%; min-width: 700px; font-size: 0.92rem; }
+    table.heat th { font-weight: 500; text-align: left; padding: 6px 8px; color: var(--muted); }
+    table.heat thead th { text-align: center; vertical-align: bottom; }
+    table.heat tbody th { color: var(--ink); white-space: nowrap; }
+    table.heat td { text-align: center; padding: 10px 6px; border-radius: 8px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+
+    /* ---------- Scroll reveal ---------- */
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); }
+    .reveal.in { opacity: 1; transform: none; }
+
+    @media (max-width: 640px) {
+      .brand { display: none; }
+      .links { width: 100%; justify-content: space-between; }
+      .lenrow { grid-template-columns: 1fr max-content; }
+      .lenrow .track { grid-column: 1 / -1; order: 3; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body class="locked">
+
+  <section id="splash" aria-label="Introduction">
+    <canvas id="galaxy" aria-hidden="true"></canvas>
+    <div class="galaxy-labels" id="galaxyLabels" aria-hidden="true"></div>
+    <div class="splash-inner">
+      <h1 class="splash-title">Steam Review Analysis</h1>
+      <p class="splash-sub">What do players write when they recommend a game, and when they don't?</p>
+      <p class="splash-count"><span id="counter">0</span> reviews read</p>
+      <button id="startBtn" class="start" type="button">Let's start</button>
+      <p class="hint">or press Enter</p>
+      <p class="star-legend">Each star is one review.<span class="dot pos"></span>recommends the game<span class="dot neg"></span>does not</p>
+    </div>
+  </section>
+
+  <div id="progress" aria-hidden="true"></div>
+
+  <canvas id="smoke" aria-hidden="true"></canvas>
+  <div id="smokeFallback" aria-hidden="true" hidden></div>
+
+  <div id="app" inert>
+    <nav class="topnav" aria-label="Sections">
+      <a class="brand" href="#question" data-go="question">Steam Review Analysis</a>
+      <div class="links">
+        <a href="#question" data-go="question">The question</a>
+        <a href="#data" data-go="data">The data</a>
+        <a href="#findings" data-go="findings">Findings</a>
+        <a href="#action" data-go="action">Action plan</a>
+        <a href="#explore" data-go="explore">Explore</a>
+        <a href="#cautions" data-go="cautions">Cautions</a>
+        <a href="#qa" data-go="qa">Q&amp;A</a>
+      </div>
+    </nav>
+
+    <main id="top">
+      <section class="page" id="page-question" hidden>
+        <div class="wrap">
+          <h2 class="question">Do players who recommend a game write about different things than players who don't?</h2>
+          <p class="lead" id="overview"></p>
+          <div class="chips" id="chips"></div>
+          <p class="legend"><span class="dot multi"></span>multiplayer <span class="dot single"></span>single-player</p>
+          <p class="prose muted">Before looking at the results we wrote down four guesses. The findings page tests them one at a time, and the action plan page turns the results into something a developer or a player can use.</p>
+          <p class="pager"><button type="button" class="next" data-go="data">Next: the data</button></p>
+        </div>
+      </section>
+
+      <section class="page" id="page-data" hidden>
+        <div class="wrap">
+          <h2>How the data was collected</h2>
+          <p class="prose">Every review comes from Steam's public review endpoint. A Python script asked for reviews, followed Steam's page markers to the next batch, and saved the results to a file anyone can open.</p>
+          <ol class="pipeline">
+            <li class="reveal">
+              <span class="step-n">1</span>
+              <h3>Collect</h3>
+              <p>100 reviews per request, the 400 most recent English reviews for each game, with a pause between requests so the script stays polite.</p>
+            </li>
+            <li class="reveal">
+              <span class="step-n">2</span>
+              <h3>Clean</h3>
+              <p>Duplicates are removed using each review's unique ID, and every game is saved to its own file as soon as it finishes.</p>
+            </li>
+            <li class="reveal">
+              <span class="step-n">3</span>
+              <h3>Analyze</h3>
+              <p>For each review the script measures its length, checks it for eight problem themes and four praise themes (such as cheating, price, story and visuals) and notes how many hours the reviewer had played.</p>
+            </li>
+            <li class="reveal">
+              <span class="step-n">4</span>
+              <h3>Show</h3>
+              <p>The analysis writes a small summary file, and this page reads it to draw everything you see below.</p>
+            </li>
+          </ol>
+          <p class="pager"><button type="button" class="next" data-go="findings">Next: findings</button></p>
+        </div>
+      </section>
+
+      <section class="page" id="page-findings" hidden>
+        <div class="wrap">
+          <h2>What the reviews say</h2>
+
+          <div class="block reveal">
+            <h3>How positive each game is</h3>
+            <div class="panel">
+              <div class="chartbox" id="posBox"><canvas id="posChart" role="img" aria-label="Bar chart of the share of positive reviews for each game"></canvas></div>
+            </div>
+            <p class="takeaway muted" id="posNote"></p>
+          </div>
+
+          <div class="block reveal">
+            <h3>How long reviews are</h3>
+            <div class="panel" id="lenPanel">
+              <div class="lenrow"><span>Positive reviews</span><div class="track"><div class="fill up" id="fillPos"></div></div><b id="lenPos"></b></div>
+              <div class="lenrow"><span>Negative reviews</span><div class="track"><div class="fill down" id="fillNeg"></div></div><b id="lenNeg"></b></div>
+            </div>
+            <p class="takeaway muted" id="lenNote"></p>
+          </div>
+
+          <div class="block reveal">
+            <h3>What negative reviews talk about</h3>
+            <div class="panel">
+              <div class="chartbox tall" id="themeBox"><canvas id="themeChart" role="img" aria-label="Grouped bar chart of how many negative reviews mention cheating, servers and lag, and bugs and performance, for multiplayer and single-player games"></canvas></div>
+            </div>
+            <p class="takeaway muted" id="themeNote"></p>
+          </div>
+
+          <div class="block reveal">
+            <h3>Does time played change the verdict?</h3>
+            <div class="panel">
+              <div class="chartbox" id="playBox"><canvas id="playChart" role="img" aria-label="Bar chart of the share of negative reviews for players grouped by hours played"></canvas></div>
+            </div>
+            <p class="takeaway muted" id="playNote"></p>
+          </div>
+
+          <div class="block reveal">
+            <h3>Our four guesses, checked against the data</h3>
+            <ul class="verdicts" id="verdicts"></ul>
+          </div>
+          <p class="pager"><button type="button" class="next" data-go="action">Next: action plan</button></p>
+        </div>
+      </section>
+
+      <section class="page" id="page-action" hidden>
+        <div class="wrap">
+          <h2>What to do with these findings</h2>
+          <p class="prose">A developer cannot read thousands of reviews, and a new player does not want to. Pick a game to see which problems come up most in its negative reviews and what players praise.</p>
+          <div class="picker" id="apPicker"></div>
+          <div class="panel detail" id="apDetail" aria-live="polite"></div>
+          <div class="block" id="apHeatBlock">
+            <h3>All games at a glance</h3>
+            <p class="prose muted">Each cell shows the share of a game's negative reviews that mention that problem. Brighter cells mean more complaints.</p>
+            <div class="panel scroll-x" id="heatWrap"></div>
+            <p class="takeaway muted" id="heatNote"></p>
+          </div>
+          <p class="prose muted">The suggestions come from how often players mention each problem. They show where complaints concentrate, not that a fix would raise the ratings.</p>
+          <p class="pager"><button type="button" class="next" data-go="explore">Next: explore a game</button></p>
+        </div>
+      </section>
+
+      <section class="page" id="page-explore" hidden>
+        <div class="wrap">
+          <h2>Explore one game at a time</h2>
+          <p class="prose">Pick a game to see its own numbers instead of the five-game totals.</p>
+          <div class="picker" id="picker"></div>
+          <div class="panel detail" id="gameDetail" aria-live="polite"></div>
+          <p class="pager"><button type="button" class="next" data-go="cautions">Next: cautions</button></p>
+        </div>
+      </section>
+
+      <section class="page" id="page-cautions" hidden>
+        <div class="wrap">
+          <h2>What to keep in mind</h2>
+          <ul class="cautions" id="cautionList"></ul>
+          <p class="pager"><button type="button" class="next" data-go="qa">Next: Q&amp;A</button></p>
+        </div>
+      </section>
+
+      <section class="page" id="page-qa" hidden>
+        <div class="wrap">
+          <h2>Questions you might ask</h2>
+          <p class="prose muted">Click a question to see the answer.</p>
+          <div class="qa-list" id="qaList"></div>
+          <p class="pager"><button type="button" class="next" data-go="question">Back to the start</button></p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p id="sourceNote"></p>
+        <p>Built for a Big Data Analytics assignment. Data collected in October 2026 from Steam's public review endpoint. Code and data are in the <a href="https://github.com/KaziMuiz/comments-scrapping">project repository</a>.</p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var MODES = {
+        "Counter-Strike 2": "multiplayer",
+        "Apex Legends": "multiplayer",
+        "Elden Ring": "single-player",
+        "Cyberpunk 2077": "single-player",
+        "Stardew Valley": "single-player"
+      };
+      var MODE_COLOR = { "multiplayer": "#6ea8ff", "single-player": "#ffb454" };
+
+      var FALLBACK = {
+        total_reviews: 2000,
+        per_game: [
+          { game: "Apex Legends", mode: "multiplayer", negative: 140, reviews: 400, percent_positive: 65.0, median_length: 34.0 },
+          { game: "Counter-Strike 2", mode: "multiplayer", negative: 102, reviews: 400, percent_positive: 74.5, median_length: 17.0 },
+          { game: "Cyberpunk 2077", mode: "single-player", negative: 27, reviews: 400, percent_positive: 93.2, median_length: 38.5 },
+          { game: "Elden Ring", mode: "single-player", negative: 38, reviews: 400, percent_positive: 90.5, median_length: 36.0 },
+          { game: "Stardew Valley", mode: "single-player", negative: 5, reviews: 400, percent_positive: 98.8, median_length: 34.5 }
+        ],
+        median_length_by_sentiment: { positive: 27.0, negative: 69.5 },
+        negative_theme_percent_by_mode: {
+          "multiplayer": { cheating: 23.1, servers_lag: 9.9, bugs_performance: 4.5 },
+          "single-player": { cheating: 1.4, servers_lag: 1.4, bugs_performance: 8.6 }
+        },
+        negative_reviews_by_mode: { "multiplayer": 242, "single-player": 70 },
+        negative_theme_counts_by_mode: {
+          "multiplayer": { cheating: 56, servers_lag: 24, bugs_performance: 11 },
+          "single-player": { cheating: 1, servers_lag: 1, bugs_performance: 6 }
+        }
+      };
+
+      var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var started = false;
+      var $ = function (id) { return document.getElementById(id); };
+      var fmt = function (n) { return Number(n).toLocaleString("en-US"); };
+
+      /* ---------- Splash: one star per review ---------- */
+      var revealed = 0;
+      var galaxyRunning = false;
+
+      function countUp(el, to, onProgress) {
+        if (reduce) { el.textContent = fmt(to); onProgress(to); return; }
+        var t0 = null, ms = 3200;
+        function tick(ts) {
+          if (t0 === null) { t0 = ts; }
+          var p = Math.min((ts - t0) / ms, 1);
+          var eased = 1 - Math.pow(1 - p, 3);
+          var v = Math.round(to * eased);
+          el.textContent = fmt(v);
+          onProgress(v);
+          if (p < 1) { requestAnimationFrame(tick); }
+        }
+        requestAnimationFrame(tick);
+      }
+
+      function gauss() { return (Math.random() + Math.random() + Math.random() - 1.5) / 1.5; }
+
+      function shuffle(a) {
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = a[i]; a[i] = a[j]; a[j] = t;
+        }
+        return a;
+      }
+
+      function startGalaxy(games) {
+        if (started) { return; }
+        var canvas = $("galaxy");
+        var ctx = canvas.getContext && canvas.getContext("2d");
+        if (!ctx) { return; }
+        var labelsBox = $("galaxyLabels");
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        var motion = reduce ? 0 : 1;
+        var W = 0, H = 0, R = 0, mx = 0, my = 0;
+        var clusters = [], dust = [];
+        var shoot = null;
+        var nextShoot = performance.now() / 1000 + 3;
+
+        games.forEach(function (g, ci) {
+          var count = g.reviews;
+          var negCount = Math.round(count * (100 - g.percent_positive) / 100);
+          var flags = [];
+          for (var k = 0; k < count; k++) { flags.push(k < negCount); }
+          shuffle(flags);
+          var stars = [];
+          for (var j = 0; j < count; j++) {
+            var t = Math.pow(Math.random(), 0.7);
+            var arm = Math.floor(Math.random() * 2) * Math.PI;
+            var theta = arm + t * 3.4 + gauss() * 0.45;
+            stars.push({
+              u: t * Math.cos(theta),
+              v: t * Math.sin(theta),
+              neg: flags[j],
+              size: 0.7 + Math.random() * 1.1,
+              tw: Math.random() * 6.28,
+              order: j * games.length + ci
+            });
+          }
+          clusters.push({
+            name: g.game,
+            stars: stars,
+            tilt: ci * 0.9 - 0.4,
+            spin: (ci % 2 ? 1 : -1) * (0.04 + ci * 0.006),
+            phase: Math.random() * 6.28
+          });
+        });
+        for (var d = 0; d < 220; d++) {
+          dust.push({ x: Math.random(), y: Math.random(), s: 0.4 + Math.random() * 0.9, tw: Math.random() * 6.28, sp: 0.6 + Math.random() * 1.4 });
+        }
+
+        // Finds free space around the text block and puts one galaxy in each spot.
+        function placeClusters(w, h, n) {
+          var inner = document.querySelector(".splash-inner").getBoundingClientRect();
+          var pad = 28;
+          var tl = inner.left - pad, tr = inner.right + pad, tt = inner.top - pad, tb = inner.bottom + pad;
+          var zones = [];
+          if (tt > 80) { zones.push({ x: 0, y: 0, w: w, h: tt }); }
+          if (h - tb > 80) { zones.push({ x: 0, y: tb, w: w, h: h - tb }); }
+          if (tl > 110 && tb > tt) { zones.push({ x: 0, y: tt, w: tl, h: tb - tt }); }
+          if (w - tr > 110 && tb > tt) { zones.push({ x: tr, y: tt, w: w - tr, h: tb - tt }); }
+          if (!zones.length) { zones.push({ x: 0, y: 0, w: w, h: h }); }
+
+          function cellsFor(z, r) {
+            var nx = Math.floor(z.w / (r * 2.2));
+            var ny = Math.floor(z.h / (r * 2.2));
+            var out = [];
+            for (var i = 0; i < nx; i++) {
+              for (var j = 0; j < ny; j++) {
+                out.push([z.x + (i + 0.5) * z.w / nx, z.y + (j + 0.5) * z.h / ny]);
+              }
+            }
+            return out;
+          }
+
+          var r = Math.min(150, Math.min(w, h) * 0.2);
+          var lists;
+          for (;;) {
+            lists = zones.map(function (z) { return cellsFor(z, r); });
+            var total = lists.reduce(function (acc, l) { return acc + l.length; }, 0);
+            if (total >= n || r < 18) { break; }
+            r *= 0.94;
+          }
+
+          var order = lists.map(function (l, i) { return i; })
+            .sort(function (a2, b2) { return lists[b2].length - lists[a2].length; });
+          var picks = lists.map(function () { return 0; });
+          var left = n;
+          while (left > 0) {
+            var progressed = false;
+            order.forEach(function (zi) {
+              if (left > 0 && picks[zi] < lists[zi].length) { picks[zi]++; left--; progressed = true; }
+            });
+            if (!progressed) { break; }
+          }
+          var centers = [];
+          lists.forEach(function (l, zi) {
+            var k = picks[zi];
+            for (var q = 0; q < k; q++) {
+              centers.push(l[Math.min(l.length - 1, Math.round((q + 0.5) * l.length / k - 0.5))]);
+            }
+          });
+          while (centers.length < n) { centers.push([w / 2, h - r]); }
+          return { r: r * 0.92, centers: centers };
+        }
+
+        function resize() {
+          var r = canvas.getBoundingClientRect();
+          W = r.width; H = r.height;
+          if (!W || !H) { return; }
+          canvas.width = Math.round(W * dpr);
+          canvas.height = Math.round(H * dpr);
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+          var spots = placeClusters(W, H, clusters.length);
+          R = spots.r;
+          labelsBox.innerHTML = "";
+          clusters.forEach(function (c, i) {
+            c.cx = spots.centers[i][0];
+            c.cy = spots.centers[i][1];
+            c.label = null;
+            if (c.name) {
+              var el = document.createElement("span");
+              el.className = "galaxy-label";
+              el.textContent = c.name;
+              el.style.left = c.cx + "px";
+              el.style.top = (c.cy + R * 0.62) + "px";
+              labelsBox.appendChild(el);
+              c.label = el;
+            }
+          });
+        }
+
+        function frame(ts) {
+          if (!galaxyRunning) { return; }
+          var time = ts / 1000;
+          if (!W || !H) { resize(); requestAnimationFrame(frame); return; }
+          ctx.clearRect(0, 0, W, H);
+          var px = mx * 12, py = my * 12;
+
+          dust.forEach(function (d) {
+            ctx.globalAlpha = 0.3 + 0.3 * (0.5 + 0.5 * Math.sin(time * d.sp * motion + d.tw));
+            ctx.fillStyle = "#f1e3d0";
+            ctx.beginPath();
+            ctx.arc(d.x * W - px * 0.4, d.y * H - py * 0.4, d.s, 0, 6.2832);
+            ctx.fill();
+          });
+
+          clusters.forEach(function (c) {
+            var glow = ctx.createRadialGradient(c.cx + px, c.cy + py, 0, c.cx + px, c.cy + py, R * 0.95);
+            glow.addColorStop(0, "rgba(201, 139, 82, 0.30)");
+            glow.addColorStop(1, "rgba(201, 139, 82, 0)");
+            ctx.globalAlpha = Math.min(revealed / 400, 1);
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(c.cx + px, c.cy + py, R * 0.95, 0, 6.2832);
+            ctx.fill();
+
+            var ang = time * c.spin * motion + c.phase;
+            var ca = Math.cos(ang), sa = Math.sin(ang);
+            var ct = Math.cos(c.tilt), st = Math.sin(c.tilt);
+            var lit = 0;
+            c.stars.forEach(function (s) {
+              var age = revealed - s.order;
+              if (age <= 0) { return; }
+              lit++;
+              var u = s.u * ca - s.v * sa;
+              var v = (s.u * sa + s.v * ca) * 0.5;
+              var x = c.cx + (u * ct - v * st) * R + px;
+              var y = c.cy + (u * st + v * ct) * R + py;
+              var fade = Math.min(age / 40, 1);
+              var tw = 1 - 0.25 * motion * (0.5 + 0.5 * Math.sin(time * 2 + s.tw));
+              ctx.globalAlpha = fade * tw * (s.neg ? 1 : 0.85);
+              ctx.fillStyle = s.neg ? "#ff6b6b" : "#3ddc97";
+              ctx.beginPath();
+              ctx.arc(x, y, s.size * (s.neg ? 1.25 : 1) * (1 + (1 - fade) * 1.6), 0, 6.2832);
+              ctx.fill();
+            });
+            if (c.label && lit >= c.stars.length) { c.label.classList.add("show"); }
+          });
+
+          if (motion) {
+            if (!shoot && time > nextShoot) {
+              shoot = { x: Math.random() * W * 0.6, y: Math.random() * H * 0.35, vx: 520 + Math.random() * 240, vy: 220 + Math.random() * 120, t0: time };
+            }
+            if (shoot) {
+              var dt = time - shoot.t0;
+              var sx = shoot.x + shoot.vx * dt, sy = shoot.y + shoot.vy * dt;
+              var tx = sx - shoot.vx * 0.12, ty = sy - shoot.vy * 0.12;
+              var lg = ctx.createLinearGradient(sx, sy, tx, ty);
+              lg.addColorStop(0, "rgba(255, 255, 255, 0.9)");
+              lg.addColorStop(1, "rgba(255, 255, 255, 0)");
+              ctx.globalAlpha = 1;
+              ctx.strokeStyle = lg;
+              ctx.lineWidth = 1.6;
+              ctx.beginPath();
+              ctx.moveTo(sx, sy);
+              ctx.lineTo(tx, ty);
+              ctx.stroke();
+              if (dt > 1.1) { shoot = null; nextShoot = time + 4 + Math.random() * 5; }
+            }
+          }
+          requestAnimationFrame(frame);
+        }
+
+        if (motion) {
+          window.addEventListener("pointermove", function (e) {
+            mx = e.clientX / window.innerWidth - 0.5;
+            my = e.clientY / window.innerHeight - 0.5;
+          }, { passive: true });
+        }
+        window.addEventListener("resize", resize);
+        if (document.fonts && document.fonts.ready) { document.fonts.ready.then(function () { resize(); }); }
+        galaxyRunning = true;
+        resize();
+        requestAnimationFrame(frame);
+      }
+
+      function startApp() {
+        if (started) { return; }
+        started = true;
+        var splash = $("splash");
+        splash.classList.add("leaving");
+        document.body.classList.remove("locked");
+        $("app").inert = false;
+        setTimeout(function () { splash.hidden = true; galaxyRunning = false; }, reduce ? 0 : 950);
+        showPage(hashPage(), false);
+        safeHistory("replaceState", current);
+      }
+
+      $("startBtn").addEventListener("click", startApp);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !started) { e.preventDefault(); startApp(); }
+      });
+
+
+      /* ---------- Reveal on scroll ---------- */
+      function onVisible(el, fn) {
+        if (!("IntersectionObserver" in window)) { fn(); return; }
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting) { io.unobserve(en.target); fn(); }
+          });
+        }, { threshold: 0.2 });
+        io.observe(el);
+      }
+
+      function setupReveals() {
+        var items = document.querySelectorAll(".reveal");
+        Array.prototype.forEach.call(items, function (el, i) {
+          if (el.tagName === "LI") { el.style.transitionDelay = (i % 4) * 0.12 + "s"; }
+          onVisible(el, function () { el.classList.add("in"); });
+        });
+      }
+
+      /* ---------- Smoke background ---------- */
+      var smokeRunning = false;
+      var SMOKE_FS = "#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nuniform vec2 u_res;\nuniform float u_time;\nuniform vec2 u_mouse;\n\nfloat hash(vec2 p) {\n  p = fract(p * vec2(123.34, 456.21));\n  p += dot(p, p + 45.32);\n  return fract(p.x * p.y);\n}\nfloat noise(vec2 p) {\n  vec2 i = floor(p);\n  vec2 f = fract(p);\n  f = f * f * (3.0 - 2.0 * f);\n  float a = hash(i);\n  float b = hash(i + vec2(1.0, 0.0));\n  float c = hash(i + vec2(0.0, 1.0));\n  float d = hash(i + vec2(1.0, 1.0));\n  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);\n}\nfloat fbm(vec2 p) {\n  float v = 0.0;\n  float a = 0.5;\n  mat2 m = mat2(1.6, 1.2, -1.2, 1.6);\n  for (int i = 0; i < 5; i++) {\n    v += a * noise(p);\n    p = m * p;\n    a *= 0.5;\n  }\n  return v;\n}\nvoid main() {\n  vec2 uv = gl_FragCoord.xy / u_res;\n  vec2 p = (gl_FragCoord.xy - 0.5 * u_res) / min(u_res.x, u_res.y);\n  p += (u_mouse - 0.5) * 0.10;\n  float t = u_time * 0.06;\n  vec2 q = vec2(fbm(p * 1.5 + vec2(0.0, t)), fbm(p * 1.5 + vec2(5.2, -t * 0.7)));\n  vec2 r = vec2(fbm(p * 1.5 + 2.0 * q + vec2(1.7, 9.2) + 0.5 * t),\n                fbm(p * 1.5 + 2.0 * q + vec2(8.3, 2.8) - 0.4 * t));\n  float f = fbm(p * 1.3 + 2.2 * r + vec2(0.0, -t * 1.6));\n  vec3 black = vec3(0.012, 0.010, 0.009);\n  vec3 umber = vec3(0.11, 0.06, 0.03);\n  vec3 brown = vec3(0.36, 0.20, 0.09);\n  vec3 ember = vec3(0.62, 0.36, 0.17);\n  vec3 col = mix(black, umber, smoothstep(0.20, 0.70, f));\n  col = mix(col, brown, smoothstep(0.50, 0.95, f) * (0.35 + 0.65 * length(q)));\n  col = mix(col, ember, pow(smoothstep(0.70, 1.0, f), 3.0) * 0.30);\n  float d = length(uv - 0.5);\n  col *= 0.45 + 0.75 * (1.0 - smoothstep(0.15, 0.95, d));\n  gl_FragColor = vec4(col, 1.0);\n}";
+
+      function startSmoke() {
+        var canvas = $("smoke");
+        var fallback = $("smokeFallback");
+        var gl = null;
+        try {
+          gl = canvas.getContext("webgl", { antialias: false, alpha: false }) || canvas.getContext("experimental-webgl");
+        } catch (e) { gl = null; }
+        if (!gl) { fallback.hidden = false; canvas.hidden = true; return; }
+
+        function compile(type, src) {
+          var sh = gl.createShader(type);
+          gl.shaderSource(sh, src);
+          gl.compileShader(sh);
+          if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) { throw new Error(gl.getShaderInfoLog(sh)); }
+          return sh;
+        }
+        var prog;
+        try {
+          prog = gl.createProgram();
+          gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }"));
+          gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, SMOKE_FS));
+          gl.linkProgram(prog);
+          if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { throw new Error("link failed"); }
+        } catch (err) { fallback.hidden = false; canvas.hidden = true; return; }
+
+        gl.useProgram(prog);
+        var buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+        var loc = gl.getAttribLocation(prog, "p");
+        gl.enableVertexAttribArray(loc);
+        gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+        var uRes = gl.getUniformLocation(prog, "u_res");
+        var uTime = gl.getUniformLocation(prog, "u_time");
+        var uMouse = gl.getUniformLocation(prog, "u_mouse");
+        var tx = 0.5, ty = 0.5, sx = 0.5, sy = 0.5;
+        var t0 = performance.now();
+
+        function size() {
+          var w = Math.max(2, Math.round(window.innerWidth * 0.5));
+          var h = Math.max(2, Math.round(window.innerHeight * 0.5));
+          canvas.width = w;
+          canvas.height = h;
+          gl.viewport(0, 0, w, h);
+        }
+        function draw(now) {
+          if (!smokeRunning) { return; }
+          sx += (tx - sx) * 0.04;
+          sy += (ty - sy) * 0.04;
+          gl.uniform2f(uRes, canvas.width, canvas.height);
+          gl.uniform1f(uTime, reduce ? 25.0 : (now - t0) / 1000 + 25.0);
+          gl.uniform2f(uMouse, sx, 1 - sy);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+          if (!reduce) { requestAnimationFrame(draw); }
+        }
+        size();
+        window.addEventListener("resize", function () {
+          size();
+          if (reduce && smokeRunning) { draw(performance.now()); }
+        });
+        if (!reduce) {
+          window.addEventListener("pointermove", function (e) {
+            tx = e.clientX / window.innerWidth;
+            ty = e.clientY / window.innerHeight;
+          }, { passive: true });
+        }
+        smokeRunning = true;
+        requestAnimationFrame(draw);
+      }
+
+      /* ---------- Pages ---------- */
+      var ORDER = ["question", "data", "findings", "action", "explore", "cautions", "qa"];
+      var current = null;
+      var switching = false;
+
+      function pageEl(id) { return $("page-" + id); }
+
+      function modeOf(g) { return g.mode || MODES[g.game] || "multiplayer"; }
+
+      // Grows the bars from zero so they animate each time a page or game appears.
+      function animateBars(root) {
+        var fills = root.querySelectorAll(".fill[data-w]");
+        Array.prototype.forEach.call(fills, function (f) { f.style.transition = "none"; f.style.width = "0%"; });
+        void root.offsetWidth;
+        Array.prototype.forEach.call(fills, function (f) { f.style.transition = ""; f.style.width = f.getAttribute("data-w") + "%"; });
+      }
+      function pageShown(id) {
+        if (id === "explore" && $("gameDetail")) { animateBars($("gameDetail")); }
+        if (id === "action" && $("apDetail")) { animateBars($("apDetail")); }
+      }
+
+      // Some preview frames block the History API, so every use is wrapped.
+      function safeHistory(method, id) {
+        try { history[method]({ page: id }, "", "#" + id); } catch (e) { /* ignored */ }
+      }
+      function hashPage() {
+        try { return location.hash.replace("#", ""); } catch (e) { return ""; }
+      }
+
+      function setNav(id) {
+        Array.prototype.forEach.call(document.querySelectorAll(".links a"), function (a) {
+          if (a.getAttribute("data-go") === id) { a.setAttribute("aria-current", "page"); }
+          else { a.removeAttribute("aria-current"); }
+        });
+        $("progress").style.width = ((ORDER.indexOf(id) + 1) / ORDER.length * 100) + "%";
+      }
+
+      function showPage(id, push) {
+        if (ORDER.indexOf(id) < 0) { id = "question"; }
+        if (id === current || switching) { return; }
+        var next = pageEl(id);
+        var prev = current ? pageEl(current) : null;
+        var dir = current && ORDER.indexOf(id) < ORDER.indexOf(current) ? -1 : 1;
+        current = id;
+        setNav(id);
+        if (push) { safeHistory("pushState", id); }
+
+        function enter() {
+          if (prev) { prev.hidden = true; prev.classList.remove("leaving"); }
+          next.style.setProperty("--dx", (dir * 36) + "px");
+          next.classList.add("entering");
+          next.hidden = false;
+          window.scrollTo(0, 0);
+          void next.offsetWidth;
+          next.classList.remove("entering");
+          switching = false;
+          pageShown(id);
+        }
+        if (prev && !reduce) {
+          switching = true;
+          prev.style.setProperty("--dx", (dir * 36) + "px");
+          prev.classList.add("leaving");
+          setTimeout(enter, 260);
+        } else {
+          enter();
+        }
+      }
+
+      document.addEventListener("click", function (e) {
+        var el = e.target.closest ? e.target.closest("[data-go]") : null;
+        if (!el || !started) { return; }
+        e.preventDefault();
+        showPage(el.getAttribute("data-go"), true);
+      });
+      window.addEventListener("popstate", function () {
+        if (started) { showPage(hashPage(), false); }
+      });
+      document.addEventListener("keydown", function (e) {
+        if (!started || (e.key !== "ArrowRight" && e.key !== "ArrowLeft")) { return; }
+        var i = ORDER.indexOf(current) + (e.key === "ArrowRight" ? 1 : -1);
+        if (i >= 0 && i < ORDER.length) { showPage(ORDER[i], true); }
+      });
+
+      /* ---------- Page content from the summary file ---------- */
+      function pct(x) { return (Math.round(x * 10) / 10) + "%"; }
+
+      function render(d) {
+        var games = d.per_game;
+        var per = games[0].reviews;
+        var n = d.negative_reviews_by_mode;
+        var cnt = d.negative_theme_counts_by_mode;
+        var pc = d.negative_theme_percent_by_mode;
+        var mp = "multiplayer", sp = "single-player";
+
+        $("overview").textContent = "We read " + fmt(d.total_reviews) + " recent English Steam reviews: " +
+          per + " from each of " + games.length + " games.";
+        games.forEach(function (g) {
+          var chip = document.createElement("span");
+          chip.className = "chip";
+          var dot = document.createElement("span");
+          dot.className = "dot " + (modeOf(g) === sp ? "single" : "multi");
+          chip.appendChild(dot);
+          chip.appendChild(document.createTextNode(g.game));
+          $("chips").appendChild(chip);
+        });
+
+        if (reduce) { Chart.defaults.animation = false; }
+        Chart.defaults.color = "#cdbfae";
+        Chart.defaults.borderColor = "rgba(255,235,215,0.12)";
+        Chart.defaults.font.family = '"Figtree", system-ui, sans-serif';
+        Chart.defaults.font.size = 14;
+
+        /* Chart 1: share positive */
+        var sorted = games.slice().sort(function (a, b) { return b.percent_positive - a.percent_positive; });
+        onVisible($("posBox"), function () {
+          new Chart($("posChart"), {
+            type: "bar",
+            data: {
+              labels: sorted.map(function (g) { return g.game; }),
+              datasets: [{
+                data: sorted.map(function (g) { return g.percent_positive; }),
+                backgroundColor: sorted.map(function (g) { return MODE_COLOR[modeOf(g)] || "#8f8bd6"; }),
+                borderRadius: 8
+              }]
+            },
+            options: {
+              indexAxis: "y",
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: function (c) { return c.parsed.x + "% positive"; } } }
+              },
+              scales: {
+                x: { min: 0, max: 100, ticks: { callback: function (v) { return v + "%"; } } },
+                y: { grid: { display: false } }
+              }
+            }
+          });
+        });
+        var top = sorted[0], low = sorted[sorted.length - 1];
+        $("posNote").textContent = top.game + " is the most positively reviewed game in the sample (" + pct(top.percent_positive) +
+          " positive) and " + low.game + " the least (" + pct(low.percent_positive) + "). Blue bars are multiplayer games, amber bars are single-player.";
+
+        /* Length bars */
+        var mPos = d.median_length_by_sentiment.positive;
+        var mNeg = d.median_length_by_sentiment.negative;
+        var mx = Math.max(mPos, mNeg);
+        $("lenPos").textContent = mPos + " characters";
+        $("lenNeg").textContent = mNeg + " characters";
+        onVisible($("lenPanel"), function () {
+          $("fillPos").style.width = (mPos / mx * 100) + "%";
+          $("fillNeg").style.width = (mNeg / mx * 100) + "%";
+        });
+        var ratio = mPos > 0 ? mNeg / mPos : 0;
+        $("lenNote").textContent = "These are medians, the length of the middle review in each group, so a few very long reviews cannot skew them. " +
+          "The typical negative review is " + (Math.round(ratio * 10) / 10) + " times as long as the typical positive one.";
+
+        /* Chart 3: themes */
+        var keys = ["cheating", "servers_lag", "bugs_performance"];
+        onVisible($("themeBox"), function () {
+          new Chart($("themeChart"), {
+            type: "bar",
+            data: {
+              labels: ["Cheating", "Servers and lag", "Bugs and performance"],
+              datasets: [
+                { label: "Multiplayer (" + n[mp] + " negative reviews)", data: keys.map(function (k) { return cnt[mp][k]; }), backgroundColor: MODE_COLOR[mp], borderRadius: 8 },
+                { label: "Single-player (" + n[sp] + " negative reviews)", data: keys.map(function (k) { return cnt[sp][k]; }), backgroundColor: MODE_COLOR[sp], borderRadius: 8 }
+              ]
+            },
+            options: {
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: "bottom" },
+                tooltip: {
+                  callbacks: {
+                    label: function (c) {
+                      var mode = c.datasetIndex === 0 ? mp : sp;
+                      return c.parsed.y + " reviews (" + pct(pc[mode][keys[c.dataIndex]]) + " of that group's negative reviews)";
+                    }
+                  }
+                }
+              },
+              scales: { y: { beginAtZero: true, title: { display: true, text: "Number of negative reviews" } }, x: { grid: { display: false } } }
+            }
+          });
+        });
+        $("themeNote").textContent = "Cheating appears in " + cnt[mp].cheating + " of " + n[mp] + " multiplayer negative reviews and in " +
+          cnt[sp].cheating + " of " + n[sp] + " single-player ones. The chart shows counts, not percentages, because the two groups are very different in size.";
+
+        /* Hours played */
+        var pt = d.playtime && d.playtime.buckets ? d.playtime : null;
+        var eligible = [];
+        var loB = null, hiB = null;
+        if (pt) {
+          eligible = pt.buckets.filter(function (b) { return b.reviews >= 30 && b.percent_negative !== null; });
+          onVisible($("playBox"), function () {
+            new Chart($("playChart"), {
+              type: "bar",
+              data: {
+                labels: pt.buckets.map(function (b) { return b.label; }),
+                datasets: [{ data: pt.buckets.map(function (b) { return b.percent_negative; }), backgroundColor: "#ff6b6b", borderRadius: 8 }]
+              },
+              options: {
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: { callbacks: { label: function (c) { var b = pt.buckets[c.dataIndex]; return b.negative + " of " + b.reviews + " reviews are negative (" + pct(c.parsed.y) + ")"; } } }
+                },
+                scales: {
+                  y: { beginAtZero: true, ticks: { callback: function (v) { return v + "%"; } }, title: { display: true, text: "Share of reviews that are negative" } },
+                  x: { grid: { display: false } }
+                }
+              }
+            });
+          });
+          var noteP = "";
+          var mh = pt.median_hours;
+          if (mh && mh.positive !== null && mh.negative !== null) {
+            noteP = "The median negative reviewer had played " + mh.negative + " hours when they wrote the review, against " + mh.positive + " hours for the median positive reviewer. ";
+          }
+          if (eligible.length >= 2) {
+            loB = eligible[0];
+            hiB = eligible[eligible.length - 1];
+            noteP += pct(hiB.percent_negative) + " of the reviews in the \"" + hiB.label.toLowerCase() + "\" group are negative, against " +
+              pct(loB.percent_negative) + " in the \"" + loB.label.toLowerCase() + "\" group.";
+          } else {
+            noteP += "Some hours-played groups have too few reviews to compare.";
+          }
+          $("playNote").textContent = noteP;
+        } else {
+          $("playBox").parentNode.hidden = true;
+          $("playNote").textContent = "Playtime results are not in this copy of the data yet. Run the updated analysis script to add them.";
+        }
+
+        /* Verdicts */
+        var list = $("verdicts");
+        var results = [];
+        var claim4 = "Players with more hours played are more likely to leave a negative review.";
+        var SHORT = {};
+        SHORT["Negative reviews are longer than positive ones."] = "negative reviews are longer";
+        SHORT["Multiplayer players complain about cheating and servers more than single-player players do."] = "multiplayer players complain more about cheating and servers";
+        SHORT["Single-player players complain about bugs and performance more than multiplayer players do."] = "single-player players complain more about bugs and performance";
+        SHORT[claim4] = "more hours played means more negative reviews";
+        function verdict(claim, kind, label, evidence) {
+          results.push({ short: SHORT[claim] || claim, label: label });
+          var li = document.createElement("li");
+          var p1 = document.createElement("p");
+          p1.className = "claim";
+          p1.textContent = claim;
+          var p2 = document.createElement("p");
+          p2.className = "evidence";
+          var b = document.createElement("span");
+          b.className = "badge " + kind;
+          b.textContent = label;
+          p2.appendChild(b);
+          p2.appendChild(document.createTextNode(evidence));
+          li.appendChild(p1);
+          li.appendChild(p2);
+          list.appendChild(li);
+        }
+
+        if (ratio >= 1.2) {
+          verdict("Negative reviews are longer than positive ones.", "supported", "Supported",
+            "The median negative review has " + mNeg + " characters against " + mPos + " for positive reviews.");
+        } else if (ratio <= 0.83) {
+          verdict("Negative reviews are longer than positive ones.", "not-supported", "Not supported",
+            "Positive reviews were longer: " + mPos + " characters against " + mNeg + ".");
+        } else {
+          verdict("Negative reviews are longer than positive ones.", "inconclusive", "Inconclusive",
+            "The medians are close: " + mNeg + " characters for negative and " + mPos + " for positive.");
+        }
+
+        if (pc[mp].cheating > pc[sp].cheating && pc[mp].servers_lag > pc[sp].servers_lag && cnt[mp].cheating >= 20) {
+          verdict("Multiplayer players complain about cheating and servers more than single-player players do.", "supported", "Supported",
+            "Cheating shows up in " + cnt[mp].cheating + " of " + n[mp] + " multiplayer negative reviews against " + cnt[sp].cheating + " of " + n[sp] +
+            " single-player ones. Servers and lag follow the same pattern: " + cnt[mp].servers_lag + " against " + cnt[sp].servers_lag + ".");
+        } else {
+          verdict("Multiplayer players complain about cheating and servers more than single-player players do.", "inconclusive", "Inconclusive",
+            "The counts do not separate the two groups clearly enough to call it.");
+        }
+
+        if (pc[sp].bugs_performance > pc[mp].bugs_performance && cnt[sp].bugs_performance >= 20) {
+          verdict("Single-player players complain about bugs and performance more than multiplayer players do.", "supported", "Supported",
+            cnt[sp].bugs_performance + " of " + n[sp] + " single-player negative reviews mention bugs or performance, against " + cnt[mp].bugs_performance + " of " + n[mp] + " multiplayer ones.");
+        } else if (cnt[sp].bugs_performance < 20) {
+          verdict("Single-player players complain about bugs and performance more than multiplayer players do.", "inconclusive", "Inconclusive",
+            "Only " + cnt[sp].bugs_performance + " of " + n[sp] + " single-player negative reviews and " + cnt[mp].bugs_performance + " of " + n[mp] +
+            " multiplayer ones mention bugs or performance. That is too few reviews to call a real difference.");
+        } else {
+          verdict("Single-player players complain about bugs and performance more than multiplayer players do.", "not-supported", "Not supported",
+            "Multiplayer reviews mention bugs or performance at least as often.");
+        }
+
+        if (!pt) {
+          verdict(claim4, "inconclusive", "Not tested yet", "Run the updated analysis script to add the playtime results.");
+        } else if (!hiB) {
+          verdict(claim4, "inconclusive", "Inconclusive", "Some hours-played groups have too few reviews to compare.");
+        } else {
+          var diff = hiB.percent_negative - loB.percent_negative;
+          var ev4 = hiB.negative + " of " + hiB.reviews + " reviews in the \"" + hiB.label.toLowerCase() + "\" group are negative (" + pct(hiB.percent_negative) +
+            "), against " + loB.negative + " of " + loB.reviews + " (" + pct(loB.percent_negative) + ") in the \"" + loB.label.toLowerCase() + "\" group.";
+          if (diff >= 5) {
+            verdict(claim4, "supported", "Supported", ev4);
+          } else if (diff <= -5) {
+            verdict(claim4, "not-supported", "Not supported", ev4 + " Players with more hours were actually less likely to be negative.");
+          } else {
+            verdict(claim4, "inconclusive", "Inconclusive", ev4 + " The difference is too small to call.");
+          }
+        }
+
+        /* Cautions */
+        var cautions = [
+          "The sample is the most recent reviews, not a random sample of all reviews. It describes what recent reviewers say, not what every player thinks.",
+          "Theme counts come from matching keywords. A review that says \"cheat codes\" or \"the anti-cheat is great\" counts the same as one complaining about cheaters.",
+          "Only " + n[sp] + " of the single-player reviews are negative, so single-player percentages rest on very few reviews. Counts are shown next to percentages for this reason.",
+          "\"Multiplayer\" and \"single-player\" are simplified labels covering two and three games, so some differences may belong to individual games rather than to the type.",
+          "The action plan ranks problems by how often players mention them. It shows where complaints concentrate, not that a fix would raise the ratings.",
+          "Hours-played groups mix games with very different player bases, so the playtime pattern describes this sample and is not a rule for all players.",
+          "Steam lists the review endpoint used here as deprecated. It worked when the data was collected in October 2026, and the saved files in the repository keep the results reproducible."
+        ];
+        cautions.forEach(function (t) {
+          var li = document.createElement("li");
+          li.textContent = t;
+          $("cautionList").appendChild(li);
+        });
+
+        /* Explore: one game at a time */
+        function el(tag, cls, txt) {
+          var e = document.createElement(tag);
+          if (cls) { e.className = cls; }
+          if (txt !== undefined) { e.textContent = txt; }
+          return e;
+        }
+        function barRow(label, value, widthPct, cls) {
+          var row = el("div", "lenrow");
+          row.appendChild(el("span", "", label));
+          var track = el("div", "track");
+          var fill = el("div", "fill " + cls);
+          fill.setAttribute("data-w", Math.max(0, Math.min(100, widthPct)).toFixed(1));
+          track.appendChild(fill);
+          row.appendChild(track);
+          row.appendChild(el("b", "", value));
+          return row;
+        }
+        var picker = $("picker");
+        function selectGame(name) {
+          var g = games.filter(function (x) { return x.game === name; })[0];
+          Array.prototype.forEach.call(picker.children, function (b) {
+            b.setAttribute("aria-pressed", b.getAttribute("data-game") === name ? "true" : "false");
+          });
+          var box = $("gameDetail");
+          box.innerHTML = "";
+          var mode = modeOf(g);
+          var head = el("div", "detail-head");
+          head.appendChild(el("h3", "", g.game));
+          var tag = el("span", "tag");
+          tag.appendChild(el("span", "dot " + (mode === sp ? "single" : "multi")));
+          tag.appendChild(document.createTextNode(mode));
+          head.appendChild(tag);
+          box.appendChild(head);
+
+          var neg = typeof g.negative === "number" ? g.negative : Math.round(g.reviews * (100 - g.percent_positive) / 100);
+          var facts = el("div", "facts");
+          [["Reviews read", fmt(g.reviews)], ["Recommend the game", pct(g.percent_positive)], ["Do not recommend", fmt(neg) + " reviews"]].forEach(function (f) {
+            var item = el("p", "fact");
+            item.appendChild(el("b", "", f[1]));
+            item.appendChild(el("span", "", f[0]));
+            facts.appendChild(item);
+          });
+          box.appendChild(facts);
+          if (neg < 30) {
+            box.appendChild(el("p", "detail-warn", "Only " + neg + " reviews of this game are negative, so the numbers about negative reviews below rest on very few of them."));
+          }
+
+          if (typeof g.median_length_positive === "number" && typeof g.median_length_negative === "number") {
+            var lm = Math.max(g.median_length_positive, g.median_length_negative);
+            box.appendChild(el("h4", "", "Typical review length (median)"));
+            box.appendChild(barRow("Positive reviews", g.median_length_positive + " characters", g.median_length_positive / lm * 100, "up"));
+            box.appendChild(barRow("Negative reviews", g.median_length_negative + " characters", g.median_length_negative / lm * 100, "down"));
+          } else if (typeof g.median_length === "number") {
+            box.appendChild(el("h4", "", "Typical review length (median)"));
+            box.appendChild(barRow("All reviews", g.median_length + " characters", 100, "sand"));
+          }
+
+          if (typeof g.median_hours_positive === "number" && typeof g.median_hours_negative === "number") {
+            var hm = Math.max(g.median_hours_positive, g.median_hours_negative, 0.1);
+            box.appendChild(el("h4", "", "Hours played when reviewing (median)"));
+            box.appendChild(barRow("Positive reviewers", g.median_hours_positive + " hours", g.median_hours_positive / hm * 100, "up"));
+            box.appendChild(barRow("Negative reviewers", g.median_hours_negative + " hours", g.median_hours_negative / hm * 100, "down"));
+          }
+
+          if (g.theme_counts && neg > 0) {
+            box.appendChild(el("h4", "", "What its negative reviews mention"));
+            [["cheating", "Cheating"], ["servers_lag", "Servers and lag"], ["bugs_performance", "Bugs and performance"]].forEach(function (t) {
+              var c = g.theme_counts[t[0]] || 0;
+              box.appendChild(barRow(t[1], c + " of " + neg, c / neg * 100, "sand"));
+            });
+          }
+
+          if (g.top_words_negative && g.top_words_negative.length) {
+            box.appendChild(el("h4", "", "Most common words in its negative reviews"));
+            var words = el("div", "words");
+            g.top_words_negative.forEach(function (w) {
+              var chip = el("span", "", w[0]);
+              chip.appendChild(el("em", "", String(w[1])));
+              words.appendChild(chip);
+            });
+            box.appendChild(words);
+          }
+
+          if (!g.theme_counts) {
+            box.appendChild(el("p", "detail-note", "More detail about this game, such as themes, hours played and common words, appears once the updated analysis script has been run."));
+          }
+          animateBars(box);
+        }
+        games.forEach(function (g) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "pick";
+          b.setAttribute("data-game", g.game);
+          b.setAttribute("aria-pressed", "false");
+          b.appendChild(el("span", "dot " + (modeOf(g) === sp ? "single" : "multi")));
+          b.appendChild(document.createTextNode(g.game));
+          b.addEventListener("click", function () { selectGame(g.game); });
+          picker.appendChild(b);
+        });
+        selectGame(games[0].game);
+
+        /* Action plan */
+        var apBox = $("apDetail");
+        var hasThemes = !!(d.themes && d.themes.problems && games[0].problems);
+        if (!hasThemes) {
+          $("apPicker").hidden = true;
+          $("apHeatBlock").hidden = true;
+          apBox.appendChild(el("p", "detail-note", "The action plan appears once the updated analysis script has been run, because it needs the extra theme counts that the script adds to the data file."));
+        } else {
+          var labelOf = {}, focusOf = {};
+          d.themes.problems.forEach(function (t) { labelOf[t.key] = t.label; focusOf[t.key] = t.focus; });
+          d.themes.praise.forEach(function (t) { labelOf[t.key] = t.label; });
+
+          var byCount = function (list) {
+            return list.filter(function (p) { return p.count > 0; }).sort(function (a, b) { return b.count - a.count; });
+          };
+          var thin = function (valueText, widthPct, cls) {
+            var row = el("div", "thin");
+            var track = el("div", "track");
+            var fill = el("div", "fill " + cls);
+            fill.setAttribute("data-w", Math.max(0, Math.min(100, widthPct)).toFixed(1));
+            track.appendChild(fill);
+            row.appendChild(track);
+            row.appendChild(el("b", "", valueText));
+            return row;
+          };
+          var apPicker = $("apPicker");
+          var selectPlan = function (name) {
+            var g = games.filter(function (x) { return x.game === name; })[0];
+            Array.prototype.forEach.call(apPicker.children, function (b) {
+              b.setAttribute("aria-pressed", b.getAttribute("data-game") === name ? "true" : "false");
+            });
+            apBox.innerHTML = "";
+            var mode = modeOf(g);
+            var head = el("div", "detail-head");
+            head.appendChild(el("h3", "", g.game));
+            var tag = el("span", "tag");
+            tag.appendChild(el("span", "dot " + (mode === sp ? "single" : "multi")));
+            tag.appendChild(document.createTextNode(mode));
+            head.appendChild(tag);
+            apBox.appendChild(head);
+
+            var neg = g.negative;
+            var pos = typeof g.positive === "number" ? g.positive : g.reviews - neg;
+            var ranked = byCount(g.problems).slice(0, 3);
+            var cols = el("div", "cols");
+
+            var dev = el("div", "col");
+            dev.appendChild(el("h4", "", "For the developer: fix these first"));
+            if (!ranked.length) {
+              dev.appendChild(el("p", "muted", "None of the problem themes appear in this game's negative reviews."));
+            }
+            ranked.forEach(function (p, i) {
+              var item = el("div", "plan-item");
+              item.appendChild(el("p", "plan-title", (i + 1) + ". " + labelOf[p.key]));
+              item.appendChild(thin(p.count + " of " + neg + " negative reviews", p.percent, "sand"));
+              item.appendChild(el("p", "plan-focus", "Suggested focus: " + focusOf[p.key]));
+              dev.appendChild(item);
+            });
+            if (neg < 30) {
+              dev.appendChild(el("p", "detail-warn", "Only " + neg + " reviews of this game are negative, so this ranking rests on very few reviews."));
+            }
+            cols.appendChild(dev);
+
+            var pl = el("div", "col");
+            pl.appendChild(el("h4", "", "For a new player: what to expect"));
+            var pp = g.percent_positive;
+            var line = pp >= 90 ? "Very well liked." : (pp >= 70 ? "Mostly liked, with some clear complaints." : "Opinions are divided.");
+            pl.appendChild(el("p", "plan-head", line + " " + pct(pp) + " of these reviews recommend it."));
+            var praised = byCount(g.praise).slice(0, 2);
+            pl.appendChild(el("p", "", praised.length ?
+              "Players praise: " + praised.map(function (p) { return labelOf[p.key].toLowerCase() + " (" + p.count + " of " + pos + " positive reviews)"; }).join(", ") + "." :
+              "No praise theme stands out in the positive reviews."));
+            pl.appendChild(el("p", "", ranked.length ?
+              "Players complain most about: " + ranked.slice(0, 2).map(function (p) { return labelOf[p.key].toLowerCase() + " (" + p.count + " of " + neg + " negative reviews)"; }).join(", ") + "." :
+              "Few complaints show up in the negative reviews."));
+            cols.appendChild(pl);
+
+            apBox.appendChild(cols);
+            animateBars(apBox);
+          };
+          games.forEach(function (g) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "pick";
+            b.setAttribute("data-game", g.game);
+            b.setAttribute("aria-pressed", "false");
+            b.appendChild(el("span", "dot " + (modeOf(g) === sp ? "single" : "multi")));
+            b.appendChild(document.createTextNode(g.game));
+            b.addEventListener("click", function () { selectPlan(g.game); });
+            apPicker.appendChild(b);
+          });
+          selectPlan(games[0].game);
+
+          var table = el("table", "heat");
+          table.appendChild(el("caption", "sr-only", "Share of each game's negative reviews that mention each problem"));
+          var thead = el("thead");
+          var hr = el("tr");
+          hr.appendChild(el("th", "", "Game"));
+          d.themes.problems.forEach(function (t) { hr.appendChild(el("th", "", t.label)); });
+          thead.appendChild(hr);
+          table.appendChild(thead);
+          var tbody = el("tbody");
+          games.forEach(function (g) {
+            var tr = el("tr");
+            tr.appendChild(el("th", "", g.game + (g.negative < 30 ? " *" : "")));
+            d.themes.problems.forEach(function (t) {
+              var p = g.problems.filter(function (x) { return x.key === t.key; })[0];
+              var has = p && p.percent !== null;
+              var td = el("td", "", has ? pct(p.percent) : "-");
+              var a = 0.06 + Math.min((has ? p.percent : 0) / 50, 1) * 0.74;
+              td.style.background = "rgba(232, 207, 174, " + a.toFixed(2) + ")";
+              if (a > 0.45) { td.style.color = "#1a110a"; }
+              td.title = p ? p.count + " of " + g.negative + " negative reviews" : "";
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+          table.appendChild(tbody);
+          $("heatWrap").appendChild(table);
+          if (games.some(function (g) { return g.negative < 30; })) {
+            $("heatNote").textContent = "* Fewer than 30 negative reviews, so those percentages are rough.";
+          }
+        }
+
+        /* Questions and answers */
+        var summaryLine = results.map(function (r) { return r.short + " (" + r.label.toLowerCase() + ")"; }).join("; ");
+        var qa = [
+          ["What is the use of this project?",
+            "It turns thousands of reviews into a short list a developer can act on: which problems come up most in each game's negative reviews, with counts and a suggested focus. It also gives a new player a quick idea of what to expect. Nobody has to read hundreds of reviews to find where the complaints concentrate."],
+          ["How do you know the suggestions would work?",
+            "I do not. They are based on how often players mention each problem, so they show where complaints concentrate. Showing that a fix raises ratings would need before-and-after data for the same game."],
+          ["What are you trying to prove?",
+            "Nothing is being proven. The project tests a question: do players who recommend a game write about different things than players who don't? We wrote four guesses before looking at the data and checked each one. The findings page shows which guesses held up, and a guess that fails is still a finding."],
+          ["Which API did you use, and where does the data come from?",
+            "Steam's public review endpoint, store.steampowered.com/appreviews followed by a game's ID. It needs no key. The script asks for 100 reviews at a time, follows a cursor to the next batch, waits between requests, and retries politely if Steam says to slow down. Steam lists this endpoint as deprecated, so the saved data files are what keep the results reproducible."],
+          ["Is the sample random?",
+            "No. It is the " + per + " most recent English reviews for each game, so it describes what recent reviewers say and not what all players think. An earlier test that used Steam's default order gave much longer reviews and fewer negative ones, which showed how strongly the collection method shapes the result."],
+          ["Why these five games?",
+            "Two are multiplayer (Counter-Strike 2 and Apex Legends) and three are single-player (Elden Ring, Cyberpunk 2077 and Stardew Valley), all heavily reviewed on Steam, so the two types can be compared. Dota 2 was planned first, but Steam returned almost no reviews for it, so Apex Legends replaced it."],
+          ["Is this scraping?",
+            "It is programmatic data collection through a public API, not reading web pages. The script pauses between requests, and no usernames or Steam IDs are saved, only the review text, whether it recommends the game, helpful votes, the date and the hours played."],
+          ["How did you handle duplicates and errors?",
+            "Every review has a unique ID, so repeats are dropped. If Steam answers too fast or not at all, the script waits and retries, and each game is saved to its own file as soon as it finishes, so a failure never loses finished work."],
+          ["How did you measure the themes?",
+            "With keyword groups. For problems: cheating, servers and lag, bugs and performance, price and purchases, toxic players, updates and content, difficulty and controls, and balance. For praise: fun and gameplay, story and world, visuals and sound, and value for money. The script checks each review for any word in a group. That counts mentions and not meaning, so \"the anti-cheat is great\" and \"cheaters ruined it\" both count as cheating."],
+          ["Why use the median instead of the average?",
+            "A few very long reviews pull the average up. The median is the length of the middle review, so it describes a typical review better."],
+          ["Is " + fmt(d.total_reviews) + " reviews really big data?",
+            "Honestly, no, that is small. What carries over is the method: paging with a cursor, removing duplicates, saving checkpoints and boiling the data down to a small summary file. With millions of reviews the same steps would run on a distributed tool such as Spark."],
+          ["What did you find?",
+            "Each guess was checked against the data: " + summaryLine + ". The findings page shows the counts behind every verdict."],
+          ["What would you do with more time?",
+            "Collect more games and more negative reviews for the single-player ones, sample across different time windows, replace keyword matching with a trained sentiment model, and compare players with similar hours played."]
+        ];
+        qa.forEach(function (item) {
+          var det = document.createElement("details");
+          det.className = "qa";
+          det.appendChild(el("summary", "", item[0]));
+          det.appendChild(el("p", "", item[1]));
+          $("qaList").appendChild(det);
+        });
+
+        setupReveals();
+      }
+
+      /* ---------- Start ---------- */
+      function boot(d, usedFallback) {
+        startGalaxy(d.per_game);
+        countUp($("counter"), d.total_reviews, function (v) { revealed = v; });
+        render(d);
+        if (usedFallback) {
+          $("sourceNote").textContent = "Showing the built-in copy of the results, because summary_5games.json could not be loaded.";
+        }
+      }
+
+      startSmoke();
+      fetch("summary_5games.json")
+        .then(function (r) {
+          if (!r.ok) { throw new Error("HTTP " + r.status); }
+          return r.json();
+        })
+        .then(
+          function (d) { return { d: d, fb: false }; },
+          function () { return { d: FALLBACK, fb: true }; }
+        )
+        .then(function (res) { boot(res.d, res.fb); });
+    })();
+  </script>
+</body>
+</html>

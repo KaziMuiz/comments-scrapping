@@ -2,34 +2,584 @@
   "total_reviews": 2000,
   "per_game": [
     {
-      "game": "Apex Legends",
-      "reviews": 400,
-      "percent_positive": 65.0,
-      "median_length": 34.0
-    },
-    {
       "game": "Counter-Strike 2",
+      "mode": "multiplayer",
       "reviews": 400,
+      "positive": 298,
+      "negative": 102,
       "percent_positive": 74.5,
-      "median_length": 17.0
+      "median_length": 17.0,
+      "median_length_positive": 14.0,
+      "median_length_negative": 45.0,
+      "median_hours_positive": 191.7,
+      "median_hours_negative": 275.5,
+      "theme_counts": {
+        "cheating": 37,
+        "servers_lag": 4,
+        "bugs_performance": 0
+      },
+      "top_words_negative": [
+        [
+          "cheaters",
+          31
+        ],
+        [
+          "valve",
+          20
+        ],
+        [
+          "vac",
+          18
+        ],
+        [
+          "play",
+          16
+        ],
+        [
+          "time",
+          10
+        ],
+        [
+          "players",
+          10
+        ],
+        [
+          "player",
+          9
+        ],
+        [
+          "anti",
+          9
+        ]
+      ],
+      "problems": [
+        {
+          "key": "cheating",
+          "count": 37,
+          "percent": 36.3
+        },
+        {
+          "key": "servers_lag",
+          "count": 4,
+          "percent": 3.9
+        },
+        {
+          "key": "bugs_performance",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "monetization",
+          "count": 8,
+          "percent": 7.8
+        },
+        {
+          "key": "toxicity",
+          "count": 3,
+          "percent": 2.9
+        },
+        {
+          "key": "content_updates",
+          "count": 2,
+          "percent": 2.0
+        },
+        {
+          "key": "difficulty_controls",
+          "count": 2,
+          "percent": 2.0
+        },
+        {
+          "key": "balance",
+          "count": 0,
+          "percent": 0.0
+        }
+      ],
+      "praise": [
+        {
+          "key": "fun_gameplay",
+          "count": 25,
+          "percent": 8.4
+        },
+        {
+          "key": "story_world",
+          "count": 2,
+          "percent": 0.7
+        },
+        {
+          "key": "visuals_sound",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "value_price",
+          "count": 1,
+          "percent": 0.3
+        }
+      ]
     },
     {
-      "game": "Cyberpunk 2077",
+      "game": "Apex Legends",
+      "mode": "multiplayer",
       "reviews": 400,
-      "percent_positive": 93.2,
-      "median_length": 38.5
+      "positive": 260,
+      "negative": 140,
+      "percent_positive": 65.0,
+      "median_length": 34.0,
+      "median_length_positive": 18.0,
+      "median_length_negative": 79.0,
+      "median_hours_positive": 146.7,
+      "median_hours_negative": 261.2,
+      "theme_counts": {
+        "cheating": 19,
+        "servers_lag": 20,
+        "bugs_performance": 11
+      },
+      "top_words_negative": [
+        [
+          "titanfall",
+          177
+        ],
+        [
+          "fix",
+          173
+        ],
+        [
+          "play",
+          50
+        ],
+        [
+          "players",
+          33
+        ],
+        [
+          "apex",
+          30
+        ],
+        [
+          "season",
+          28
+        ],
+        [
+          "money",
+          27
+        ],
+        [
+          "good",
+          24
+        ]
+      ],
+      "problems": [
+        {
+          "key": "cheating",
+          "count": 19,
+          "percent": 13.6
+        },
+        {
+          "key": "servers_lag",
+          "count": 20,
+          "percent": 14.3
+        },
+        {
+          "key": "bugs_performance",
+          "count": 11,
+          "percent": 7.9
+        },
+        {
+          "key": "monetization",
+          "count": 20,
+          "percent": 14.3
+        },
+        {
+          "key": "toxicity",
+          "count": 3,
+          "percent": 2.1
+        },
+        {
+          "key": "content_updates",
+          "count": 20,
+          "percent": 14.3
+        },
+        {
+          "key": "difficulty_controls",
+          "count": 3,
+          "percent": 2.1
+        },
+        {
+          "key": "balance",
+          "count": 8,
+          "percent": 5.7
+        }
+      ],
+      "praise": [
+        {
+          "key": "fun_gameplay",
+          "count": 40,
+          "percent": 15.4
+        },
+        {
+          "key": "story_world",
+          "count": 6,
+          "percent": 2.3
+        },
+        {
+          "key": "visuals_sound",
+          "count": 2,
+          "percent": 0.8
+        },
+        {
+          "key": "value_price",
+          "count": 5,
+          "percent": 1.9
+        }
+      ]
     },
     {
       "game": "Elden Ring",
+      "mode": "single-player",
       "reviews": 400,
+      "positive": 362,
+      "negative": 38,
       "percent_positive": 90.5,
-      "median_length": 36.0
+      "median_length": 36.0,
+      "median_length_positive": 33.0,
+      "median_length_negative": 96.5,
+      "median_hours_positive": 101.4,
+      "median_hours_negative": 87.8,
+      "theme_counts": {
+        "cheating": 1,
+        "servers_lag": 0,
+        "bugs_performance": 2
+      },
+      "top_words_negative": [
+        [
+          "souls",
+          16
+        ],
+        [
+          "elden",
+          11
+        ],
+        [
+          "ring",
+          10
+        ],
+        [
+          "some",
+          10
+        ],
+        [
+          "then",
+          9
+        ],
+        [
+          "bosses",
+          9
+        ],
+        [
+          "most",
+          7
+        ],
+        [
+          "time",
+          7
+        ]
+      ],
+      "problems": [
+        {
+          "key": "cheating",
+          "count": 1,
+          "percent": 2.6
+        },
+        {
+          "key": "servers_lag",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "bugs_performance",
+          "count": 2,
+          "percent": 5.3
+        },
+        {
+          "key": "monetization",
+          "count": 7,
+          "percent": 18.4
+        },
+        {
+          "key": "toxicity",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "content_updates",
+          "count": 3,
+          "percent": 7.9
+        },
+        {
+          "key": "difficulty_controls",
+          "count": 7,
+          "percent": 18.4
+        },
+        {
+          "key": "balance",
+          "count": 1,
+          "percent": 2.6
+        }
+      ],
+      "praise": [
+        {
+          "key": "fun_gameplay",
+          "count": 59,
+          "percent": 16.3
+        },
+        {
+          "key": "story_world",
+          "count": 42,
+          "percent": 11.6
+        },
+        {
+          "key": "visuals_sound",
+          "count": 27,
+          "percent": 7.5
+        },
+        {
+          "key": "value_price",
+          "count": 16,
+          "percent": 4.4
+        }
+      ]
+    },
+    {
+      "game": "Cyberpunk 2077",
+      "mode": "single-player",
+      "reviews": 400,
+      "positive": 373,
+      "negative": 27,
+      "percent_positive": 93.2,
+      "median_length": 38.5,
+      "median_length_positive": 35.0,
+      "median_length_negative": 157.0,
+      "median_hours_positive": 47.9,
+      "median_hours_negative": 19.8,
+      "theme_counts": {
+        "cheating": 0,
+        "servers_lag": 1,
+        "bugs_performance": 3
+      },
+      "top_words_negative": [
+        [
+          "story",
+          18
+        ],
+        [
+          "dialogue",
+          12
+        ],
+        [
+          "world",
+          9
+        ],
+        [
+          "most",
+          9
+        ],
+        [
+          "how",
+          8
+        ],
+        [
+          "also",
+          8
+        ],
+        [
+          "boring",
+          7
+        ],
+        [
+          "character",
+          7
+        ]
+      ],
+      "problems": [
+        {
+          "key": "cheating",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "servers_lag",
+          "count": 1,
+          "percent": 3.7
+        },
+        {
+          "key": "bugs_performance",
+          "count": 3,
+          "percent": 11.1
+        },
+        {
+          "key": "monetization",
+          "count": 2,
+          "percent": 7.4
+        },
+        {
+          "key": "toxicity",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "content_updates",
+          "count": 7,
+          "percent": 25.9
+        },
+        {
+          "key": "difficulty_controls",
+          "count": 1,
+          "percent": 3.7
+        },
+        {
+          "key": "balance",
+          "count": 0,
+          "percent": 0.0
+        }
+      ],
+      "praise": [
+        {
+          "key": "fun_gameplay",
+          "count": 58,
+          "percent": 15.5
+        },
+        {
+          "key": "story_world",
+          "count": 84,
+          "percent": 22.5
+        },
+        {
+          "key": "visuals_sound",
+          "count": 35,
+          "percent": 9.4
+        },
+        {
+          "key": "value_price",
+          "count": 16,
+          "percent": 4.3
+        }
+      ]
     },
     {
       "game": "Stardew Valley",
+      "mode": "single-player",
       "reviews": 400,
+      "positive": 395,
+      "negative": 5,
       "percent_positive": 98.8,
-      "median_length": 34.5
+      "median_length": 34.5,
+      "median_length_positive": 34.0,
+      "median_length_negative": 79.0,
+      "median_hours_positive": 44.1,
+      "median_hours_negative": 3.1,
+      "theme_counts": {
+        "cheating": 0,
+        "servers_lag": 0,
+        "bugs_performance": 1
+      },
+      "top_words_negative": [
+        [
+          "work",
+          3
+        ],
+        [
+          "after",
+          2
+        ],
+        [
+          "way",
+          2
+        ],
+        [
+          "boring",
+          2
+        ],
+        [
+          "tried",
+          2
+        ],
+        [
+          "years",
+          1
+        ],
+        [
+          "turn",
+          1
+        ],
+        [
+          "volume",
+          1
+        ]
+      ],
+      "problems": [
+        {
+          "key": "cheating",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "servers_lag",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "bugs_performance",
+          "count": 1,
+          "percent": 20.0
+        },
+        {
+          "key": "monetization",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "toxicity",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "content_updates",
+          "count": 2,
+          "percent": 40.0
+        },
+        {
+          "key": "difficulty_controls",
+          "count": 0,
+          "percent": 0.0
+        },
+        {
+          "key": "balance",
+          "count": 0,
+          "percent": 0.0
+        }
+      ],
+      "praise": [
+        {
+          "key": "fun_gameplay",
+          "count": 111,
+          "percent": 28.1
+        },
+        {
+          "key": "story_world",
+          "count": 11,
+          "percent": 2.8
+        },
+        {
+          "key": "visuals_sound",
+          "count": 13,
+          "percent": 3.3
+        },
+        {
+          "key": "value_price",
+          "count": 10,
+          "percent": 2.5
+        }
+      ]
     }
   ],
   "median_length_by_sentiment": {
@@ -63,5 +613,100 @@
       "servers_lag": 1,
       "bugs_performance": 6
     }
+  },
+  "playtime": {
+    "buckets": [
+      {
+        "label": "Under 10 hours",
+        "reviews": 254,
+        "negative": 44,
+        "percent_negative": 17.3
+      },
+      {
+        "label": "10 to 100 hours",
+        "reviews": 782,
+        "negative": 68,
+        "percent_negative": 8.7
+      },
+      {
+        "label": "100 to 1,000 hours",
+        "reviews": 823,
+        "negative": 141,
+        "percent_negative": 17.1
+      },
+      {
+        "label": "Over 1,000 hours",
+        "reviews": 141,
+        "negative": 59,
+        "percent_negative": 41.8
+      }
+    ],
+    "median_hours": {
+      "positive": 82.2,
+      "negative": 195.0
+    },
+    "missing": 0
+  },
+  "themes": {
+    "problems": [
+      {
+        "key": "cheating",
+        "label": "Cheating",
+        "focus": "Stronger anti-cheat and faster bans"
+      },
+      {
+        "key": "servers_lag",
+        "label": "Servers and lag",
+        "focus": "More server capacity and better matchmaking"
+      },
+      {
+        "key": "bugs_performance",
+        "label": "Bugs and performance",
+        "focus": "Bug-fix patches and performance optimization"
+      },
+      {
+        "key": "monetization",
+        "label": "Price and purchases",
+        "focus": "Review pricing and in-game purchases"
+      },
+      {
+        "key": "toxicity",
+        "label": "Toxic players",
+        "focus": "Better reporting and moderation tools"
+      },
+      {
+        "key": "content_updates",
+        "label": "Updates and content",
+        "focus": "More frequent content and clearer update plans"
+      },
+      {
+        "key": "difficulty_controls",
+        "label": "Difficulty and controls",
+        "focus": "Difficulty options and control polish"
+      },
+      {
+        "key": "balance",
+        "label": "Balance",
+        "focus": "Balance changes and clearer patch notes"
+      }
+    ],
+    "praise": [
+      {
+        "key": "fun_gameplay",
+        "label": "Fun and gameplay"
+      },
+      {
+        "key": "story_world",
+        "label": "Story and world"
+      },
+      {
+        "key": "visuals_sound",
+        "label": "Visuals and sound"
+      },
+      {
+        "key": "value_price",
+        "label": "Value for money"
+      }
+    ]
   }
 }
