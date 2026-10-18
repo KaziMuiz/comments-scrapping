@@ -418,6 +418,32 @@
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
 
+    /* ---------- Live tool ---------- */
+    .live-form { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 12px; }
+    .live-form input, .live-form select {
+      font: inherit;
+      color: var(--ink);
+      background: var(--surface);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 235, 215, 0.25);
+      border-radius: 999px;
+      padding: 12px 20px;
+    }
+    .live-form input { flex: 1 1 320px; }
+    .live-form select option { color: #1a110a; }
+    code { background: var(--surface-2); border-radius: 6px; padding: 1px 7px; font-size: 0.92em; }
+    .detail-note-small { color: var(--muted); font-size: 0.92rem; margin: 10px 0 0; }
+    .examples summary { cursor: pointer; color: #e8cfae; margin-top: 8px; }
+    .examples ul { margin: 8px 0 0; padding-left: 1.1em; color: var(--muted); }
+    .examples li { margin-bottom: 8px; }
+    button:disabled { opacity: 0.55; cursor: wait; }
+
+    .howto { margin-top: 28px; max-width: 44em; }
+    .howto ul { padding-left: 1.1em; margin: 8px 0 0; }
+    .howto li { margin-bottom: 8px; color: var(--muted); text-shadow: 0 1px 14px rgba(5, 4, 3, 0.85); }
+    .howto b { color: var(--ink); }
+
     /* ---------- Scroll reveal ---------- */
     .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); }
     .reveal.in { opacity: 1; transform: none; }
@@ -463,6 +489,7 @@
         <a href="#data" data-go="data">The data</a>
         <a href="#findings" data-go="findings">Findings</a>
         <a href="#action" data-go="action">Action plan</a>
+        <a href="#live" data-go="live">Try any game</a>
         <a href="#explore" data-go="explore">Explore</a>
         <a href="#cautions" data-go="cautions">Cautions</a>
         <a href="#qa" data-go="qa">Q&amp;A</a>
@@ -477,6 +504,14 @@
           <div class="chips" id="chips"></div>
           <p class="legend"><span class="dot multi"></span>multiplayer <span class="dot single"></span>single-player</p>
           <p class="prose muted">Before looking at the results we wrote down four guesses. The findings page tests them one at a time, and the action plan page turns the results into something a developer or a player can use.</p>
+          <div class="howto">
+            <h3>How this site fits together</h3>
+            <ul>
+              <li><b>The research</b> (The data, Findings, Action plan, Explore) is built from 2000 reviews collected from five games and saved in the project.</li>
+              <li><b>The tool</b> (Try any game) runs the same analysis on any Steam game, live.</li>
+              <li><b>The support pages</b> (Cautions, Q&amp;A) explain the limits of the work and answer likely questions.</li>
+            </ul>
+          </div>
           <p class="pager"><button type="button" class="next" data-go="data">Next: the data</button></p>
         </div>
       </section>
@@ -569,6 +604,32 @@
             <p class="takeaway muted" id="heatNote"></p>
           </div>
           <p class="prose muted">The suggestions come from how often players mention each problem. They show where complaints concentrate, not that a fix would raise the ratings.</p>
+          <p class="pager"><button type="button" class="next" data-go="live">Next: try any game</button></p>
+        </div>
+      </section>
+
+      <section class="page" id="page-live" hidden>
+        <div class="wrap">
+          <h2>Try it on any game</h2>
+          <p class="prose">Paste a Steam link, enter a game ID, or type a game name. The tool reads the game's most recent English reviews, finds the problems players mention most, and shows example comments for each one.</p>
+          <div class="live-form">
+            <input id="liveInput" type="text" placeholder="Steam link, game ID or game name" autocomplete="off" aria-label="Steam link, game ID or game name">
+            <select id="liveCount" aria-label="How many recent reviews to read">
+              <option value="200">200 reviews</option>
+              <option value="400" selected>400 reviews</option>
+              <option value="1000">1000 reviews</option>
+            </select>
+            <button type="button" class="next" id="liveGo">Analyze</button>
+          </div>
+          <div class="picker">
+            <button type="button" class="pick try-chip" data-q="Dota 2">Dota 2</button>
+            <button type="button" class="pick try-chip" data-q="Baldur's Gate 3">Baldur's Gate 3</button>
+            <button type="button" class="pick try-chip" data-q="Hades">Hades</button>
+            <button type="button" class="pick try-chip" data-q="PUBG: BATTLEGROUNDS">PUBG: BATTLEGROUNDS</button>
+          </div>
+          <p class="muted" id="liveStatus" role="status" aria-live="polite"></p>
+          <div class="panel detail" id="liveResult" hidden></div>
+          <p class="prose muted">This page works when you start the project server with <code>py src/app.py</code> and open <code>http://127.0.0.1:8000</code>. It cannot run on the published website, because that hosts only fixed pages and the tool needs Python to read the reviews.</p>
           <p class="pager"><button type="button" class="next" data-go="explore">Next: explore a game</button></p>
         </div>
       </section>
@@ -1000,7 +1061,7 @@
       }
 
       /* ---------- Pages ---------- */
-      var ORDER = ["question", "data", "findings", "action", "explore", "cautions", "qa"];
+      var ORDER = ["question", "data", "findings", "action", "live", "explore", "cautions", "qa"];
       var current = null;
       var switching = false;
 
@@ -1078,6 +1139,7 @@
       });
       document.addEventListener("keydown", function (e) {
         if (!started || (e.key !== "ArrowRight" && e.key !== "ArrowLeft")) { return; }
+        if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) { return; }
         var i = ORDER.indexOf(current) + (e.key === "ArrowRight" ? 1 : -1);
         if (i >= 0 && i < ORDER.length) { showPage(ORDER[i], true); }
       });
@@ -1394,7 +1456,7 @@
             box.appendChild(el("h4", "", "What its negative reviews mention"));
             [["cheating", "Cheating"], ["servers_lag", "Servers and lag"], ["bugs_performance", "Bugs and performance"]].forEach(function (t) {
               var c = g.theme_counts[t[0]] || 0;
-              box.appendChild(barRow(t[1], c + " of " + neg, c / neg * 100, "sand"));
+              box.appendChild(barRow(t[1], c + " of " + neg + " (" + pct(c / neg * 100) + ")", c / neg * 100, "sand"));
             });
           }
 
@@ -1470,7 +1532,9 @@
 
             var neg = g.negative;
             var pos = typeof g.positive === "number" ? g.positive : g.reviews - neg;
-            var ranked = byCount(g.problems).slice(0, 3);
+            var allProblems = byCount(g.problems);
+            var info = rankInfo(allProblems);
+            var ranked = allProblems.slice(0, 3);
             var cols = el("div", "cols");
 
             var dev = el("div", "col");
@@ -1480,11 +1544,14 @@
             }
             ranked.forEach(function (p, i) {
               var item = el("div", "plan-item");
-              item.appendChild(el("p", "plan-title", (i + 1) + ". " + labelOf[p.key]));
-              item.appendChild(thin(p.count + " of " + neg + " negative reviews", p.percent, "sand"));
+              item.appendChild(el("p", "plan-title", info[i].rank + ". " + labelOf[p.key] + (info[i].tied ? " (tied)" : "")));
+              item.appendChild(thin(p.count + " of " + neg + " (" + pct(p.percent) + ")", p.percent, "sand"));
               item.appendChild(el("p", "plan-focus", "Suggested focus: " + focusOf[p.key]));
               dev.appendChild(item);
             });
+            if (ranked.some(function (p, i) { return info[i].tied; })) {
+              dev.appendChild(el("p", "plan-focus", "Problems marked tied were mentioned in the same number of reviews, so none of them clearly comes first."));
+            }
             if (neg < 30) {
               dev.appendChild(el("p", "detail-warn", "Only " + neg + " reviews of this game are negative, so this ranking rests on very few reviews."));
             }
@@ -1555,7 +1622,11 @@
         var summaryLine = results.map(function (r) { return r.short + " (" + r.label.toLowerCase() + ")"; }).join("; ");
         var qa = [
           ["What is the use of this project?",
-            "It turns thousands of reviews into a short list a developer can act on: which problems come up most in each game's negative reviews, with counts and a suggested focus. It also gives a new player a quick idea of what to expect. Nobody has to read hundreds of reviews to find where the complaints concentrate."],
+            "It turns thousands of reviews into a short list a developer can act on: which problems come up most in a game's negative reviews, with counts, percentages and example comments. A developer can paste any Steam game link into the live tool, and it reads that game's recent reviews and returns that list. It also gives a new player a quick idea of what to expect. Nobody has to read hundreds of reviews to find where the complaints concentrate."],
+          ["Can a developer use it on their own game?",
+            "Yes. On the Try any game page, paste the game's Steam link or type its name, choose how many recent reviews to read, and the tool returns the problems players mention most, with counts, percentages and a few short example comments."],
+          ["Why is the live tool not on the published website?",
+            "The published page is fixed, and GitHub Pages cannot run Python. The live tool reads reviews from Steam with a Python server, so it runs from the project on a laptop. Putting it online would need a hosting service that runs Python."],
           ["How do you know the suggestions would work?",
             "I do not. They are based on how often players mention each problem, so they show where complaints concentrate. Showing that a fix raises ratings would need before-and-after data for the same game."],
           ["What are you trying to prove?",
@@ -1591,6 +1662,135 @@
 
         setupReveals();
       }
+
+      /* ---------- Live tool: analyze any Steam game ---------- */
+      function mk(tag, cls, txt) {
+        var e = document.createElement(tag);
+        if (cls) { e.className = cls; }
+        if (txt !== undefined) { e.textContent = txt; }
+        return e;
+      }
+
+      // Rank with ties: items with the same count share a rank and are marked tied.
+      function rankInfo(sorted) {
+        return sorted.map(function (p) {
+          var same = sorted.filter(function (q) { return q.count === p.count; });
+          var first = sorted.indexOf(same[0]);
+          return { rank: first + 1, tied: same.length > 1 };
+        });
+      }
+
+      function liveThin(valueText, widthPct, cls) {
+        var row = mk("div", "thin");
+        var track = mk("div", "track");
+        var fill = mk("div", "fill " + cls);
+        fill.setAttribute("data-w", Math.max(0, Math.min(100, widthPct || 0)).toFixed(1));
+        track.appendChild(fill);
+        row.appendChild(track);
+        row.appendChild(mk("b", "", valueText));
+        return row;
+      }
+
+      function exampleList(items) {
+        if (!items || !items.length) { return null; }
+        var det = mk("details", "examples");
+        det.appendChild(mk("summary", "", "See example comments"));
+        var ul = mk("ul");
+        items.forEach(function (t) { ul.appendChild(mk("li", "", "\u201C" + t + "\u201D")); });
+        det.appendChild(ul);
+        return det;
+      }
+
+      function renderLive(r) {
+        var box = $("liveResult");
+        box.innerHTML = "";
+        box.hidden = false;
+        var head = mk("div", "detail-head");
+        head.appendChild(mk("h3", "", r.game.name));
+        head.appendChild(mk("span", "tag", "Steam app " + r.game.app_id));
+        box.appendChild(head);
+
+        var facts = mk("div", "facts");
+        [["Reviews read", fmt(r.reviews_read)], ["Recommend the game", pct(r.percent_positive)], ["Do not recommend", fmt(r.negative) + " reviews"]].forEach(function (f) {
+          var item = mk("p", "fact");
+          item.appendChild(mk("b", "", f[1]));
+          item.appendChild(mk("span", "", f[0]));
+          facts.appendChild(item);
+        });
+        box.appendChild(facts);
+        if (r.cached) { box.appendChild(mk("p", "detail-note-small", "Loaded from a saved copy made in the last few hours, so it was instant.")); }
+        if (r.warning) { box.appendChild(mk("p", "detail-warn", r.warning)); }
+        if (r.negative < 30) {
+          box.appendChild(mk("p", "detail-warn", "Only " + r.negative + " of these reviews are negative, so the problem ranking rests on very few reviews."));
+        }
+
+        var cols = mk("div", "cols");
+        var dev = mk("div", "col");
+        dev.appendChild(mk("h4", "", "For the developer: fix these first"));
+        var probs = r.problems.filter(function (p) { return p.count > 0; });
+        var info = rankInfo(probs);
+        if (!probs.length) { dev.appendChild(mk("p", "muted", "None of the problem themes appear in the negative reviews.")); }
+        probs.slice(0, 5).forEach(function (p, i) {
+          var item = mk("div", "plan-item");
+          item.appendChild(mk("p", "plan-title", info[i].rank + ". " + p.label + (info[i].tied ? " (tied)" : "")));
+          item.appendChild(liveThin(p.count + " of " + r.negative + " (" + pct(p.percent) + ")", p.percent, "sand"));
+          item.appendChild(mk("p", "plan-focus", "Suggested focus: " + p.focus));
+          var ex = exampleList(p.examples);
+          if (ex) { item.appendChild(ex); }
+          dev.appendChild(item);
+        });
+        cols.appendChild(dev);
+
+        var pl = mk("div", "col");
+        pl.appendChild(mk("h4", "", "For a new player: what players praise"));
+        var pp = r.percent_positive;
+        var line = pp >= 90 ? "Very well liked." : (pp >= 70 ? "Mostly liked, with some clear complaints." : "Opinions are divided.");
+        pl.appendChild(mk("p", "plan-head", line + " " + pct(pp) + " of these reviews recommend it."));
+        var praised = r.praise.filter(function (p) { return p.count > 0; }).slice(0, 3);
+        if (!praised.length) { pl.appendChild(mk("p", "muted", "No praise theme stands out in the positive reviews.")); }
+        praised.forEach(function (p) {
+          var item = mk("div", "plan-item");
+          item.appendChild(mk("p", "plan-title", p.label));
+          item.appendChild(liveThin(p.count + " of " + r.positive + " (" + pct(p.percent) + ")", p.percent, "up"));
+          var ex = exampleList(p.examples);
+          if (ex) { item.appendChild(ex); }
+          pl.appendChild(item);
+        });
+        cols.appendChild(pl);
+        box.appendChild(cols);
+        box.appendChild(mk("p", "detail-note-small", "Counts are reviews that mention words from each theme. They show where comments concentrate, not that a fix would raise the ratings."));
+        animateBars(box);
+      }
+
+      function runLive() {
+        var q = $("liveInput").value.trim();
+        var status = $("liveStatus");
+        if (!q) { status.textContent = "Type a game name, paste a Steam link, or enter a game ID first."; return; }
+        $("liveGo").disabled = true;
+        $("liveResult").hidden = true;
+        status.textContent = "Reading reviews from Steam. This can take 10 to 40 seconds...";
+        fetch("api/analyze?q=" + encodeURIComponent(q) + "&n=" + $("liveCount").value)
+          .then(function (r) { return r.json(); })
+          .then(function (r) {
+            if (!r.ok) { status.textContent = r.error; return; }
+            status.textContent = "";
+            try { renderLive(r); } catch (e) { status.textContent = "Could not show the results: " + e.message; }
+          }, function () {
+            status.textContent = "The live tool needs the project server. Stop any other preview, run py src/app.py in the terminal, and open http://127.0.0.1:8000.";
+          })
+          .then(function () { $("liveGo").disabled = false; });
+      }
+
+      $("liveGo").addEventListener("click", runLive);
+      $("liveInput").addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); runLive(); }
+      });
+      Array.prototype.forEach.call(document.querySelectorAll(".try-chip"), function (b) {
+        b.addEventListener("click", function () {
+          $("liveInput").value = b.getAttribute("data-q");
+          $("liveInput").focus();
+        });
+      });
 
       /* ---------- Start ---------- */
       function boot(d, usedFallback) {
