@@ -32,7 +32,21 @@ Four guesses were written before looking at the data:
 | 1 | Negative reviews are longer than positive ones | **Supported.** The median negative review has 69.5 characters, against 27 for positive reviews. |
 | 2 | Multiplayer players complain about cheating and servers more than single-player players do | **Supported.** Cheating appears in 56 of 242 multiplayer negative reviews (23.1%) against 1 of 70 single-player ones (1.4%). Servers and lag: 24 against 1. |
 | 3 | Single-player players complain about bugs and performance more than multiplayer players do | **Inconclusive.** 6 of 70 single-player negative reviews against 11 of 242 multiplayer ones. Too few reviews to call a difference. |
-| 4 | Players with more hours played are more likely to leave a negative review | **[FILL IN from the Findings page: supported, not supported or inconclusive, with the numbers shown there]** |
+| 4 | Players with more hours played are more likely to leave a negative review | **Negative reviews are longer than positive ones.
+
+SupportedThe median negative review has 69.5 characters against 27 for positive reviews.
+
+Multiplayer players complain about cheating and servers more than single-player players do.
+
+SupportedCheating shows up in 56 of 242 multiplayer negative reviews against 1 of 70 single-player ones. Servers and lag follow the same pattern: 24 against 1.
+
+Single-player players complain about bugs and performance more than multiplayer players do.
+
+InconclusiveOnly 6 of 70 single-player negative reviews and 11 of 242 multiplayer ones mention bugs or performance. That is too few reviews to call a real difference.
+
+Players with more hours played are more likely to leave a negative review.
+
+Supported59 of 141 reviews in the "over 1,000 hours" group are negative (41.8%), against 44 of 254 (17.3%) in the "under 10 hours" group. |
 
 ### What the action plan shows
 
