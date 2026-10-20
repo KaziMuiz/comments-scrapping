@@ -32,7 +32,7 @@ Four guesses were written before looking at the data:
 | 1 | Negative reviews are longer than positive ones | **Supported.** The median negative review has 69.5 characters, against 27 for positive reviews. |
 | 2 | Multiplayer players complain about cheating and servers more than single-player players do | **Supported.** Cheating appears in 56 of 242 multiplayer negative reviews (23.1%) against 1 of 70 single-player ones (1.4%). Servers and lag: 24 against 1. |
 | 3 | Single-player players complain about bugs and performance more than multiplayer players do | **Inconclusive.** 6 of 70 single-player negative reviews against 11 of 242 multiplayer ones. Too few reviews to call a difference. |
-| 4 | Players with more hours played are more likely to leave a negative review | **Negative reviews are longer than positive ones.
+| 4 | Players with more hours played are more likely to leave a negative review | **Supported.** 59 of 141 reviews (41.8%) from players with over 1,000 hours are negative, against 44 of 254 (17.3%) from players with under 10 hours. These groups mix different games, so this describes this sample and is not a rule. |
 
 SupportedThe median negative review has 69.5 characters against 27 for positive reviews.
 
@@ -56,12 +56,6 @@ Supported59 of 141 reviews in the "over 1,000 hours" group are negative (41.8%),
 
 Share of reviews that recommend each game in the sample: Stardew Valley 98.8%, Cyberpunk 2077 93.2%, Elden Ring 90.5%, Counter-Strike 2 74.5%, Apex Legends 65.0%.
 
-## Screenshots
-
-![The question page](screenshots/question.png)
-![Findings page](screenshots/findings.png)
-![Action plan page](screenshots/action-plan.png)
-![Try any game page](screenshots/try-any-game.png)
 
 ## Data
 
